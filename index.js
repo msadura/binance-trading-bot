@@ -131,7 +131,9 @@ async function setStopLoss(symbol, approxPrice, quantity) {
 
     stopLossOrders[symbol] = {
       id: resp.id,
-      qty: sellQuantity
+      qty: sellQuantity,
+      price,
+      stopPrice
     };
   } catch (e) {
     const responseError = getResponseError(e);
