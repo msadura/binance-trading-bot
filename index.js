@@ -7,24 +7,17 @@ const config = {
   useServerTime: true,
   recvWindow: 60000,
   verbose: true,
-  test: false
+  test: process.env.TEST_TRANSACTIONS
 };
 
-const BUY_TRIGGER_LEVEL = 6;
-const STOP_LOSS_LEVEL = 3;
-const SINGLE_TRANSACTION_USD_AMOUNT = 12;
-
-if (process.env.USE_TESTNET) {
-  config.urls = {
-    // base: 'https://testnet.binance.vision/api/',
-    // combineStream: 'wss://testnet.binance.vision/stream?streams=',
-    // stream: 'wss://testnet.binance.vision/ws/'
-  };
-}
+const UP_TRIGGER_LEVEL = 0.06;
+const STOP_LOSS_PRICE_LEVEL = 0.03;
+const STOP_LOSS_TRIGGER_LEVEL = 0.025;
+const SINGLE_TRANSACTION_USD_AMOUNT = 15;
 
 const binance = new Binance().options(config);
 // list of all symbols to watch
-const watchTickers = ['MATICBUSD'];
+const watchTickers = ['MATICUSDT', 'DOGEUSDT', 'CRVUSDT', 'SOLUSDT', 'BNBUSDT', 'SRMUSDT'];
 const referencePrices = {};
 const stopLossOrders = {};
 let filters;
@@ -32,15 +25,7 @@ let balances;
 
 function watchPrices() {
   binance.websockets.trades(watchTickers, trades => {
-    let {
-      e: eventType,
-      E: eventTime,
-      s: symbol,
-      p: priceStr,
-      q: quantity,
-      m: maker,
-      a: tradeId
-    } = trades;
+    let { s: symbol, p: priceStr } = trades;
     const price = Number(priceStr);
 
     if (stopLossOrders[symbol]) {
@@ -55,15 +40,16 @@ function watchPrices() {
 
     if (refPrice > price) {
       referencePrices[symbol] = price;
-      console.info(`${symbol} - ${price}, 🔻`);
+      // console.info(`${symbol} - ${price}, 🔻`);
       return;
     }
 
     if (price > refPrice) {
-      const percentageUp = (price / refPrice - 1) * 100;
-      console.info(`${symbol} - ${price}, 🟢 ${percentageUp}%`);
+      const percentageUp = price / refPrice - 1;
+      // console.info(`${symbol} - ${price}, 🟢 ${percentageUp}%`);
 
-      if (percentageUp >= BUY_TRIGGER_LEVEL) {
+      if (percentageUp >= UP_TRIGGER_LEVEL) {
+        console.log('🟢', `${symbol} - Purchase level reached`);
         buy(symbol, price);
       }
     }
@@ -72,7 +58,6 @@ function watchPrices() {
 
 async function buy(symbol, approxPrice) {
   const quantity = getAmountToBuy(symbol, approxPrice);
-  console.log('🔥 quantity:', quantity);
 
   try {
     const resp = await binance.marketBuy(symbol, quantity);
@@ -102,13 +87,13 @@ async function buy(symbol, approxPrice) {
     //   type: 'MARKET'
     // };
 
-    await loadBalances();
-    setStopLoss(symbol, approxPrice, quantity);
+    // await loadBalances();
+    console.log('💰', `${symbol} - Purchased - qty: ${quantity} price: ${approxPrice}`);
+    setStopLoss(symbol, approxPrice, resp.executedQty);
     // testSell(symbol, Number(resp.executedQty));
     debugger;
   } catch (e) {
-    const responseError = getResponseError(e);
-    console.log('🔥', responseError.code, responseError.message);
+    logResponseError(e);
     debugger;
   }
 }
@@ -117,15 +102,21 @@ async function setStopLoss(symbol, approxPrice, quantity) {
   let sellQuantity = quantity;
   if (stopLossOrders[symbol]) {
     sellQuantity = sellQuantity || stopLossOrders[symbol].qty;
+    console.log('🟡', `${symbol} - cancelling previous stop loss order`);
     await binance.cancel(symbol, stopLossOrders[symbol].id);
+  }
+
+  if (!quantity) {
+    // TODO - fetch balances, get max qty
+    return;
   }
 
   let type = 'STOP_LOSS_LIMIT';
   // TODO - figure out the best way to set up stop loss levels
   // 3% price down
-  let price = roundPrecision(symbol, approxPrice - approxPrice * 0.03);
+  let price = roundPrecision(symbol, approxPrice - approxPrice * STOP_LOSS_PRICE_LEVEL);
   // 2.5% price down
-  let stopPrice = roundPrecision(symbol, approxPrice - approxPrice * 0.025);
+  let stopPrice = roundPrecision(symbol, approxPrice - approxPrice * STOP_LOSS_TRIGGER_LEVEL);
   try {
     const resp = await binance.sell(symbol, quantity, price, { stopPrice: stopPrice, type: type });
 
@@ -135,29 +126,64 @@ async function setStopLoss(symbol, approxPrice, quantity) {
       price,
       stopPrice
     };
+
+    console.log(
+      '🟡',
+      `${symbol} - Stop loss set - qty: ${sellQuantity} stopPrice: ${stopPrice} sellPrice: ${price}`
+    );
   } catch (e) {
-    const responseError = getResponseError(e);
+    logResponseError(e);
     debugger;
   }
 }
 
 function purchasedSymbolPriceUpdated(symbol, approxPrice) {
-  // TODO:
-  // - check if stop loss price should be higher (price growing) + update it
-  // - check if price is lower than stop loss price - emergency market sell
-  // - check if stop loss still exists - if it triggered correctly just remove it from stopLossOrders
-}
+  const stopLoss = stopLossOrders[symbol];
+  const updatedPrice = Number(approxPrice);
 
-async function testSell(symbol, quantity) {
-  try {
-    const resp = await binance.marketSell(symbol, quantity);
-    debugger;
-  } catch (e) {
-    const responseError = getResponseError(e);
-    console.log('🔥', responseError.code, responseError.message);
-    debugger;
+  if (updatedPrice > stopLoss.price) {
+    const percentageUp = updatedPrice / stopLoss.price - 1;
+    if (percentageUp > UP_TRIGGER_LEVEL) {
+      console.log('🚀', `${symbol} - Price pump, increasing stop loss - price: ${approxPrice}`);
+      setStopLoss(symbol, updatedPrice);
+    }
+  }
+
+  if (updatedPrice < stopLoss.price) {
+    liquidateStopLoss(symbol);
   }
 }
+
+async function liquidateStopLoss(symbol) {
+  try {
+    const allOrders = await binance.openOrders(symbol);
+    const stopLossOrders = allOrders.filter(o => o.type === 'STOP_LOSS_LIMIT');
+    if (stopLossOrders.length) {
+      await binance.cancelAll(symbol);
+      const quantity = stopLossOrders[symbol]?.qty;
+      if (quantity) {
+        console.log('🔴', `${symbol} - Emergency manual market sell`);
+        await binance.marketSell(symbol, quantity);
+      }
+    }
+  } catch (e) {
+    logResponseError(e);
+    debugger;
+  }
+
+  stopLossOrders[symbol] = null;
+  console.log('🔴', `${symbol} - Stop loss triggered`);
+}
+
+// async function testSell(symbol, quantity) {
+//   try {
+//     const resp = await binance.marketSell(symbol, quantity);
+//     debugger;
+//   } catch (e) {
+//     logResponseError(e);
+//     debugger;
+//   }
+// }
 
 function roundPrecision(symbol, toRound) {
   const numToRound = Number(toRound);
@@ -207,13 +233,14 @@ async function runApp() {
   await loadBalances();
 
   // Test getting prices
-  const prices = await binance.prices();
-  console.log('🔥 price', prices.SRMBUSD, filters.SRMBUSD);
+  // const prices = await binance.prices();
+  // console.log('🔥 price', prices.SRMBUSD, filters.SRMBUSD);
   // Test purchase
   // buy('SRMBUSD', prices.SRMUSDT);
   // setStopLoss('SRMBUSD', 9.16, 1.26);
+  // liquidateStopLoss('SRMBUSD');
 
-  watchPrices();
+  // watchPrices();
 }
 
 function getResponseError(e) {
@@ -222,6 +249,11 @@ function getResponseError(e) {
   }
 
   return null;
+}
+
+function logResponseError(error) {
+  const responseError = getResponseError(error);
+  console.log('🔥 RES ERROR: ', `code: ${responseError.code}`, `message:${responseError.message}`);
 }
 
 runApp();
