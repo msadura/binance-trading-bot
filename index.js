@@ -50,13 +50,12 @@ function watchPrices() {
       return;
     }
 
-    if (price > refPrice) {
+    if (price > refPrice && Number(balances.USDT) >= SINGLE_TRANSACTION_USD_AMOUNT) {
       const percentageUp = price / refPrice - 1;
       // console.info(`${symbol} - ${price}, 🟢 ${percentageUp}%`);
 
       if (percentageUp >= UP_TRIGGER_LEVEL) {
-        console.log('ℹ️', 'STOP LOSSES', stopLossOrders);
-        console.log('🟢', `${symbol} - Purchase level reached`);
+        console.log('🟢', `${symbol} - Purchase level reached - up ${percentageUp * 100}%`);
         pendingTransactions[symbol] = true;
         buy(symbol, price);
       }
@@ -99,7 +98,6 @@ async function buy(symbol, approxPrice) {
     // await loadBalances();
     console.log('💰', `${symbol} - Purchased - qty: ${resp.executedQty} price: ${approxPrice}`);
     setStopLoss(symbol, approxPrice, resp.executedQty);
-    // testSell(symbol, Number(resp.executedQty));
     debugger;
   } catch (e) {
     console.log('🔴', `${symbol} - Failed to buy`);
@@ -141,9 +139,7 @@ async function setStopLoss(symbol, approxPrice, quantity) {
 
   let type = 'STOP_LOSS_LIMIT';
   // TODO - figure out the best way to set up stop loss levels
-  // 3% price down
   let price = roundPricePrecision(symbol, approxPrice - approxPrice * STOP_LOSS_PRICE_LEVEL);
-  // 2.5% price down
   let stopPrice = roundPricePrecision(symbol, approxPrice - approxPrice * STOP_LOSS_TRIGGER_LEVEL);
 
   console.log(
@@ -163,6 +159,7 @@ async function setStopLoss(symbol, approxPrice, quantity) {
       price,
       stopPrice
     };
+    referencePrices[symbol] = stopPrice;
 
     console.log(
       '🟡',
@@ -197,9 +194,11 @@ function purchasedSymbolPriceUpdated(symbol, approxPrice) {
 
 async function liquidateStopLoss(symbol) {
   try {
+    console.log('🔴', `${symbol} - Liquidating...`);
     const allOrders = await binance.openOrders(symbol);
     const stopLossOrders = allOrders.filter(o => o.type === 'STOP_LOSS_LIMIT');
     if (stopLossOrders.length) {
+      console.log('🔴', `${symbol} - Trying to cancel existing stop loss...`);
       await binance.cancelAll(symbol);
       const quantity = stopLossOrders[symbol]?.qty;
       if (quantity) {
@@ -208,10 +207,18 @@ async function liquidateStopLoss(symbol) {
       }
     }
   } catch (e) {
+    const error = getResponseError(e);
+    if (error.code === -2011) {
+      console.log('🔴', `${symbol} - Stop loss already executed`);
+      return;
+    }
+
     logResponseError(e);
     debugger;
   }
 
+  await loadBalances();
+  referencePrices[symbol] = stopLossOrders[symbol].stopPrice;
   stopLossOrders[symbol] = null;
   finishTransaction(symbol);
   console.log('🔴', `${symbol} - Stop loss triggered`);
@@ -280,7 +287,7 @@ async function getBalance(symbol) {
   const coinSymbol = symbol.replace('USDT', '');
   await loadBalances();
   const balance = balances[coinSymbol];
-  console.log('ℹ️', `${coinSymbol} - BALANCE`, balance);
+  console.log('ℹ️ ', `${coinSymbol} - BALANCE`, balance);
   return balances[coinSymbol];
 }
 
@@ -293,14 +300,14 @@ async function runApp() {
   // Test getting prices
   // const prices = await binance.prices();
   // console.log('🔥 filter', filters.MATICUSDT);
-  // console.log('🔥 balance', balances.MATIC);
+  console.log('🔥 balance', balances.USDT);
   // Test purchase
   // buy('MATICUSDT', prices.MATICUSDT);
   // setStopLoss('MATICUSDT', 9.16, 0.852);
   // liquidateStopLoss('SRMBUSD');
   // console.log('🔥', roundPricePrecision('MATICUSDT', '8.12349080809098'));
 
-  watchPrices();
+  // watchPrices();
 }
 
 function getResponseError(e) {
