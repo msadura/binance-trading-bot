@@ -7,13 +7,14 @@ const config = {
   useServerTime: true,
   recvWindow: 60000,
   verbose: true,
+  // Change to tru for fake transactions
   test: false
 };
 
-const UP_TRIGGER_LEVEL = 0.04;
-const STOP_LOSS_TRIGGER_LEVEL = 0.015;
-const STOP_LOSS_PRICE_LEVEL = 0.02;
-const SINGLE_TRANSACTION_USD_AMOUNT = 20;
+const UP_TRIGGER_LEVEL = 0.03;
+const STOP_LOSS_TRIGGER_LEVEL = 0.06;
+const STOP_LOSS_PRICE_LEVEL = 0.065;
+const SINGLE_TRANSACTION_USD_AMOUNT = 50;
 
 const binance = new Binance().options(config);
 // list of all symbols to watch
@@ -24,8 +25,49 @@ const pendingTransactions = {};
 let filters;
 let balances;
 
-function watchPrices() {
-  binance.websockets.trades(watchTickers, trades => {
+runApp();
+
+async function runApp() {
+  await binance.useServerTime();
+  await loadSymbolsInfo();
+  await loadBalances();
+
+  // Test stuff
+  // hasFundsToBuy();
+  // const prices = await binance.prices();
+  // console.log('🔥 filter', filters.MATICUSDT);
+  // console.log('🔥 balance', balances.USDT);
+  // Test purchase
+  // buy('MATICUSDT', prices.MATICUSDT);
+  // setStopLoss('MATICUSDT', 9.16, 0.852);
+  // liquidateStopLoss('SRMBUSD');
+  // console.log('🔥', roundPricePrecision('MATICUSDT', '8.12349080809098'));
+
+  // watchPrices(watchTickers);
+  watchAllUSDT();
+}
+
+function watchAllUSDT() {
+  const USDTPairs = Object.keys(filters).filter(p => p.includes('USDT'));
+  const USDTPairsNoLeverages = filterLeverages(USDTPairs);
+  //TEMP - remove doge and sol
+  // const USDTPairtNoDoge = USDTPairsNoLeverages.filter(
+  //   p => !p.includes('DOGE') && !p.includes('SOL')
+  // );
+  watchPrices(USDTPairsNoLeverages);
+}
+
+function filterLeverages(pairsArray) {
+  return pairsArray.filter(p => !p.includes('UPUSDT') && !p.includes('DOWNUSDT'));
+}
+
+function watchPrices(watchTickersList) {
+  if (!watchTickersList || !watchTickersList.length) {
+    console.log('🔴', `No tickers specified to watch. BB`);
+    return;
+  }
+
+  binance.websockets.trades(watchTickersList, trades => {
     let { s: symbol, p: priceStr } = trades;
     const price = Number(priceStr);
 
@@ -45,22 +87,28 @@ function watchPrices() {
     }
 
     if (refPrice > price) {
+      // New bottom price
       referencePrices[symbol] = price;
       // console.info(`${symbol} - ${price}, 🔻`);
       return;
     }
 
-    if (price > refPrice && Number(balances.USDT) >= SINGLE_TRANSACTION_USD_AMOUNT) {
+    if (price > refPrice && hasFundsToBuy()) {
       const percentageUp = price / refPrice - 1;
       // console.info(`${symbol} - ${price}, 🟢 ${percentageUp}%`);
 
       if (percentageUp >= UP_TRIGGER_LEVEL) {
         console.log('🟢', `${symbol} - Purchase level reached - up ${percentageUp * 100}%`);
-        pendingTransactions[symbol] = true;
+        startTransaction(symbol);
         buy(symbol, price);
       }
     }
   });
+}
+
+function hasFundsToBuy() {
+  const hasFunds = Number(balances.USDT.available) >= SINGLE_TRANSACTION_USD_AMOUNT;
+  return hasFunds;
 }
 
 async function buy(symbol, approxPrice) {
@@ -95,15 +143,12 @@ async function buy(symbol, approxPrice) {
     //   type: 'MARKET'
     // };
 
-    // await loadBalances();
     console.log('💰', `${symbol} - Purchased - qty: ${resp.executedQty} price: ${approxPrice}`);
     setStopLoss(symbol, approxPrice, resp.executedQty);
-    debugger;
   } catch (e) {
     console.log('🔴', `${symbol} - Failed to buy`);
     finishTransaction(symbol);
     logResponseError(e);
-    debugger;
   }
 }
 
@@ -167,7 +212,6 @@ async function setStopLoss(symbol, approxPrice, quantity) {
     );
   } catch (e) {
     logResponseError(e);
-    debugger;
   } finally {
     finishTransaction(symbol);
   }
@@ -179,15 +223,15 @@ function purchasedSymbolPriceUpdated(symbol, approxPrice) {
 
   if (updatedPrice > stopLoss.stopPrice) {
     const percentageUp = updatedPrice / stopLoss.price - 1;
-    if (percentageUp > UP_TRIGGER_LEVEL) {
-      pendingTransactions[symbol] = true;
+    if (percentageUp > UP_TRIGGER_LEVEL + STOP_LOSS_PRICE_LEVEL) {
+      startTransaction(symbol);
       console.log('🚀', `${symbol} - Price pump, increasing stop loss - price: ${approxPrice}`);
       setStopLoss(symbol, updatedPrice);
     }
   }
 
   if (updatedPrice < stopLoss.stopPrice) {
-    pendingTransactions[symbol] = true;
+    startTransaction(symbol);
     liquidateStopLoss(symbol);
   }
 }
@@ -214,7 +258,6 @@ async function liquidateStopLoss(symbol) {
     }
 
     logResponseError(e);
-    debugger;
   }
 
   await loadBalances();
@@ -291,25 +334,6 @@ async function getBalance(symbol) {
   return balances[coinSymbol];
 }
 
-async function runApp() {
-  await binance.useServerTime();
-  await loadSymbolsInfo();
-  await loadBalances();
-
-  // Test stuff
-  // Test getting prices
-  // const prices = await binance.prices();
-  // console.log('🔥 filter', filters.MATICUSDT);
-  console.log('🔥 balance', balances.USDT);
-  // Test purchase
-  // buy('MATICUSDT', prices.MATICUSDT);
-  // setStopLoss('MATICUSDT', 9.16, 0.852);
-  // liquidateStopLoss('SRMBUSD');
-  // console.log('🔥', roundPricePrecision('MATICUSDT', '8.12349080809098'));
-
-  // watchPrices();
-}
-
 function getResponseError(e) {
   if (e.body) {
     return JSON.parse(e.body);
@@ -320,7 +344,6 @@ function getResponseError(e) {
 
 function logResponseError(error) {
   const responseError = getResponseError(error);
-  console.log('🔥', 'resp error', responseError);
   console.log('🔥 RES ERROR: ', `code: ${responseError.code}`, `message:${responseError.msg}`);
 }
 
@@ -328,4 +351,6 @@ function finishTransaction(symbol) {
   pendingTransactions[symbol] = false;
 }
 
-runApp();
+function startTransaction(symbol) {
+  pendingTransactions[symbol] = true;
+}
