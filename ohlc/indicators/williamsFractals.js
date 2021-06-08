@@ -1,11 +1,24 @@
-function williamsFractals(ohlcArray) {
+function williamsFractals(ohlcArray, { checkAll } = {}) {
   const candlesCount = ohlcArray.length;
   if (candlesCount < 6) {
     return ohlcArray;
   }
 
   const updatedOhlc = [...ohlcArray];
-  const n = candlesCount - 3;
+  if (checkAll) {
+    updatedOhlc.forEach((o, n) => checkFractal(updatedOhlc, n));
+  } else {
+    const n = candlesCount - 3;
+    checkFractal(updatedOhlc, n);
+  }
+
+  return updatedOhlc;
+}
+
+function checkFractal(ohlcArray, n) {
+  if (n < 2 || n > ohlcArray.length - 3) {
+    return;
+  }
 
   const candlesSet = {
     'n-2': ohlcArray[n - 2],
@@ -15,10 +28,8 @@ function williamsFractals(ohlcArray) {
     'n+2': ohlcArray[n + 2]
   };
 
-  updatedOhlc[n].isBearishFractal = isBearishFractal(candlesSet);
-  updatedOhlc[n].isBullishFractal = isBullishFractal(candlesSet);
-
-  return updatedOhlc;
+  ohlcArray[n].isBearishFractal = isBearishFractal(candlesSet);
+  ohlcArray[n].isBullishFractal = isBullishFractal(candlesSet);
 }
 
 function isBullishFractal(candlesSet) {
@@ -44,10 +55,10 @@ function isBearishFractal(candlesSet) {
   // High(N)>High(N+2)
 
   return (
-    candlesSet.n.high > candlesSet['n-2'].low &&
-    candlesSet.n.high > candlesSet['n-1'].low &&
-    candlesSet.n.high > candlesSet['n+1'].low &&
-    candlesSet.n.high > candlesSet['n+2'].low
+    candlesSet.n.high > candlesSet['n-2'].high &&
+    candlesSet.n.high > candlesSet['n-1'].high &&
+    candlesSet.n.high > candlesSet['n+1'].high &&
+    candlesSet.n.high > candlesSet['n+2'].high
   );
 }
 

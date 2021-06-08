@@ -6,6 +6,7 @@ const { logUsedRequestsLimit } = require('./utils');
 const { loadAccountOrdersState } = require('./spotOrders');
 const watchLivePricesStrategy = require('./watchLivePricesStrategy');
 const watchHeikinAshiStrategy = require('./watchHeikinAshiStrategy');
+const watchFractalsStrategy = require('./watchFractalsStrategy');
 
 runApp();
 
@@ -33,4 +34,5 @@ async function runApp() {
   // ---- use selected trade strategy ----
   // watchLivePricesStrategy();
   // watchHeikinAshiStrategy();
+  watchFractalsStrategy();
 }
