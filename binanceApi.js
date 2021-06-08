@@ -1,8 +1,8 @@
 const Binance = require('node-binance-api');
 
 const config = {
-  APIKEY: process.env.APIKEY,
-  APISECRET: process.env.APISECRET,
+  APIKEY: process.env.BINANCE_KEY,
+  APISECRET: process.env.BINANCE_SECRET,
   useServerTime: true,
   recvWindow: 60000,
   verbose: true,

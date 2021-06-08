@@ -1,9 +1,11 @@
 const binance = require('./binanceApi');
 
 let filters;
+let requestLimits = {};
 
-async function loadSymbolsInfo() {
+async function loadExchangeInfo() {
   const resp = await binance.exchangeInfo();
+  setRequestLimits(resp.rateLimits);
 
   let minimums = {};
   for (let obj of resp.symbols) {
@@ -39,7 +41,16 @@ function getFilters() {
   return filters;
 }
 
+function setRequestLimits(rateLimits) {
+  rateLimits?.forEach(l => (requestLimits[l.rateLimitType] = l));
+}
+
+function getRequestLimits(type) {
+  return requestLimits[type];
+}
+
 module.exports = {
   getFilters,
-  loadSymbolsInfo
+  loadExchangeInfo,
+  getRequestLimits
 };

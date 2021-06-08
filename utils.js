@@ -1,6 +1,6 @@
 const binance = require('./binanceApi');
 const { BLOCKED_TRADE_COINS } = require('./constants');
-const { getFilters } = require('./filters');
+const { getFilters, getRequestLimits } = require('./filters');
 
 function roundQtyPrecision(symbol, toRound) {
   const numToRound = Number(toRound);
@@ -20,4 +20,22 @@ function canTradePair(symbol) {
   return !BLOCKED_TRADE_COINS.some(coin => symbol.includes(coin));
 }
 
-module.exports = { roundQtyPrecision, roundPricePrecision, canTradePair };
+function sleep(ms) {
+  return new Promise(res => setTimeout(res, ms));
+}
+
+async function logUsedRequestsLimit() {
+  const usedLimit = await binance.usedWeight();
+  console.log(
+    'ℹ️',
+    `used binance requests limit: ${usedLimit} / ${getRequestLimits('REQUEST_WEIGHT')?.limit}`
+  );
+}
+
+module.exports = {
+  roundQtyPrecision,
+  roundPricePrecision,
+  canTradePair,
+  sleep,
+  logUsedRequestsLimit
+};

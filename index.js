@@ -1,19 +1,22 @@
 require('dotenv').config();
 const binance = require('./binanceApi');
 const { loadBalances } = require('./balances');
-const { loadSymbolsInfo } = require('./filters');
+const { loadExchangeInfo } = require('./filters');
+const { logUsedRequestsLimit } = require('./utils');
 const { loadAccountOrdersState } = require('./spotOrders');
-const { watchLivePricesStrategy } = require('./watchLivePricesStrategy');
+const watchLivePricesStrategy = require('./watchLivePricesStrategy');
+const watchHeikinAshiStrategy = require('./watchHeikinAshiStrategy');
 
 runApp();
 
 async function runApp() {
   // ---- bootstrap phase ----
   await binance.useServerTime();
-  await loadSymbolsInfo();
+  await loadExchangeInfo();
 
   await loadBalances();
   await loadAccountOrdersState();
+  logUsedRequestsLimit();
   // ---- end bootstrap phase ----
 
   // ---- Test stuff ----
@@ -28,5 +31,6 @@ async function runApp() {
   // console.log('🔥', roundPricePrecision('MATICUSDT', '8.12349080809098'));
 
   // ---- use selected trade strategy ----
-  watchLivePricesStrategy();
+  // watchLivePricesStrategy();
+  // watchHeikinAshiStrategy();
 }

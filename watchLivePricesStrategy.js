@@ -279,4 +279,4 @@ async function watchIdle() {
   setInterval(() => sellIdleSymbols(), 1000 * 60 * 5);
 }
 
-module.exports = { watchLivePricesStrategy };
+module.exports = watchLivePricesStrategy;
