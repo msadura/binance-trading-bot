@@ -1,7 +1,7 @@
 const { hasFundsToBuy, getBalance } = require('./balances');
 const binance = require('./binanceApi');
 const { SINGLE_TRANSACTION_USD_AMOUNT } = require('./constants');
-const { getStopLossOrders } = require('./spotOrders');
+const { getSpotTrades } = require('./trades/spotTrades');
 const { hasPendingTransaction, startTransaction, finishTransaction } = require('./transactions');
 const { logResponseError, getResponseError } = require('./errorHandler');
 const { roundQtyPrecision, roundPricePrecision } = require('./utils');
@@ -34,7 +34,7 @@ function watchPrices(watchTickersList) {
     if (hasPendingTransaction()) {
       return;
     }
-    const stopLossOrders = getStopLossOrders();
+    const stopLossOrders = getSpotTrades();
     if (stopLossOrders[symbol]) {
       purchasedSymbolPriceUpdated(symbol, price);
       return;
@@ -67,7 +67,7 @@ function watchPrices(watchTickersList) {
 }
 
 function purchasedSymbolPriceUpdated(symbol, approxPrice) {
-  const stopLossOrders = getStopLossOrders();
+  const stopLossOrders = getSpotTrades();
   const stopLoss = stopLossOrders[symbol];
   const updatedPrice = Number(approxPrice);
 
@@ -86,7 +86,7 @@ function purchasedSymbolPriceUpdated(symbol, approxPrice) {
 }
 
 async function setStopLoss(symbol, approxPrice, quantity) {
-  const stopLossOrders = getStopLossOrders();
+  const stopLossOrders = getSpotTrades();
   const existingStopLoss = stopLossOrders[symbol];
   let sellQuantity = quantity || existingStopLoss?.qty;
   let nextLevel = existingStopLoss ? (existingStopLoss.lvl || 0) + 1 : 0;
@@ -164,7 +164,7 @@ async function liquidateStopLoss(symbol) {
       console.log('🔴', `${symbol} - Trying to cancel existing stop loss...`);
       await binance.cancelAll(symbol);
 
-      const stopLossOrders = getStopLossOrders();
+      const stopLossOrders = getSpotTrades();
       const quantity = roundQtyPrecision(symbol, stopLossOrders[symbol]?.qty);
       if (quantity) {
         console.log('🔴', `${symbol} - Manual market sell`);
@@ -182,7 +182,7 @@ async function liquidateStopLoss(symbol) {
   }
 
   await loadBalances();
-  const stopLossOrders = getStopLossOrders();
+  const stopLossOrders = getSpotTrades();
   referencePrices[symbol] = stopLossOrders[symbol].stopPrice;
   stopLossOrders[symbol] = null;
   finishTransaction(symbol);
@@ -248,7 +248,7 @@ function getAmountToBuy(symbol, approxPrice) {
 async function sellIdleSymbols() {
   console.log('ℹ️', `Checking for idle coins...`);
   const nowTimestamp = new Date().getTime();
-  const stopLossOrders = getStopLossOrders();
+  const stopLossOrders = getSpotTrades();
   Object.entries(stopLossOrders).forEach(async ([symbol, data]) => {
     if (!data) {
       return;

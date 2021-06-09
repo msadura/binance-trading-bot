@@ -1,4 +1,5 @@
 const binance = require('../binanceApi');
+const { roundPricePrecision } = require('../utils');
 
 function watchCandlesticks({ pairs, period = '1m', callback }) {
   binance.websockets.candlesticks(pairs, period, candlesticks => {
@@ -22,11 +23,12 @@ function watchCandlesticks({ pairs, period = '1m', callback }) {
     }
 
     const ticksData = {
-      open,
-      high,
-      low,
-      close,
-      volume,
+      volume: Number(volume),
+      open: roundPricePrecision(symbol, open),
+      high: roundPricePrecision(symbol, high),
+      low: roundPricePrecision(symbol, low),
+      close: roundPricePrecision(symbol, close),
+      closeTime: new Date(),
       trades,
       interval,
       isFinal,

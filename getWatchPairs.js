@@ -1,5 +1,5 @@
 const { MANUAL_WATCH_PAIRS } = require('./constants');
-const { getFilters } = require('./filters');
+const { getFilters } = require('./exchangeInfo');
 const { canTradePair } = require('./utils');
 
 function getWatchPairs(withLeverages = false) {

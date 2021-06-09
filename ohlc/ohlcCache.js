@@ -1,4 +1,4 @@
-let cacheSize = 15;
+let cacheSize = 500;
 let ohlc = {};
 
 function addOhlcPair(pair, data) {
@@ -19,7 +19,7 @@ function addOhlcPair(pair, data) {
   return ohlc[pair];
 }
 
-function getohlc(pair) {
+function getOhlc(pair) {
   return ohlc[pair] || [];
 }
 
@@ -37,4 +37,4 @@ function setCacheSize(size) {
   }
 }
 
-module.exports = { getohlc, addOhlcPair, setOhlcData, setCacheSize };
+module.exports = { getOhlc, addOhlcPair, setOhlcData, setCacheSize };

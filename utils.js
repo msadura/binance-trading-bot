@@ -1,6 +1,6 @@
 const binance = require('./binanceApi');
 const { BLOCKED_TRADE_COINS } = require('./constants');
-const { getFilters, getRequestLimits } = require('./filters');
+const { getFilters, getRequestLimits } = require('./exchangeInfo');
 
 function roundQtyPrecision(symbol, toRound) {
   const numToRound = Number(toRound);

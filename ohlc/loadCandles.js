@@ -1,7 +1,7 @@
 const binance = require('../binanceApi');
 const { sleep, logUsedRequestsLimit, roundPricePrecision } = require('../utils');
 
-const OHLC_HISTORY_SIZE = 15;
+const OHLC_HISTORY_SIZE = 500;
 
 async function loadCandlesForSymbol(symbol, interval, limit = OHLC_HISTORY_SIZE) {
   const options = {};
