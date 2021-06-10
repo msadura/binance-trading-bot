@@ -32,12 +32,6 @@ function checkFractal(ohlcArray, n) {
 
   ohlcArray[n].isBearishFractal = isBearishFractal(candlesSet);
   ohlcArray[n].isBullishFractal = isBullishFractal(candlesSet);
-
-  if (!ca) {
-    console.log('🔥 candle config', candlesSet);
-    console.log('🔥 updated ohlc item', ohlcArray[n]);
-    console.log('🔥 all items', ohlcArray);
-  }
 }
 
 function isBullishFractal(candlesSet) {
