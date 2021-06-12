@@ -10,6 +10,7 @@ const { queueTransaction } = require('./transactions');
 const { roundPricePrecision } = require('./utils');
 const watchAccountUpdates = require('./trades/watchAccountUpdates');
 const watchOpenSpotTrades = require('./trades/watchOpenSpotTrades');
+const { getSpotTrades } = require('./trades/spotTrades');
 
 const RISK_REWARD_RATIO = 1.5;
 const STOP_LOSS_SELL_RATIO = 0.005;
@@ -49,6 +50,11 @@ async function watchFractalsStrategy() {
 }
 
 function checkForTradeSignal(symbol, ohlc) {
+  const openTrades = getSpotTrades();
+  if (openTrades.symbol) {
+    return;
+  }
+
   const fractalPosition = ohlc.length - 3;
   const referenceCandle = ohlc[fractalPosition];
   const lastCandle = ohlc[ohlc.length - 1];
