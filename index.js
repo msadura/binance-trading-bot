@@ -35,5 +35,5 @@ async function runApp() {
   // ---- use selected trade strategy ----
   // watchLivePricesStrategy();
   // watchHeikinAshiStrategy();
-  watchFractalsStrategy();
+  // watchFractalsStrategy();
 }
