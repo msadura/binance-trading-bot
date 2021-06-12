@@ -51,7 +51,7 @@ async function watchFractalsStrategy() {
 
 function checkForTradeSignal(symbol, ohlc) {
   const openTrades = getSpotTrades();
-  if (openTrades.symbol) {
+  if (openTrades[symbol]) {
     return;
   }
 
