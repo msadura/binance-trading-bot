@@ -76,8 +76,6 @@ async function runTransation(type, config, retries = 0) {
     const action = getActionForType(type, config);
     if (action) {
       await action();
-    } else {
-      console.log('🔥', 'no action?', type, config);
     }
   } catch (e) {
     console.log('🔥 transaction error:', e);
@@ -97,7 +95,6 @@ function getActionForType(type, config) {
       //spot buy default, add support for futures
       return async () => {
         const postTradeOrderConfig = await buySpot(config);
-        console.log('🔥', 'post trade order', postTradeOrderConfig);
         queueTransaction('POST_TRADE_ORDER', postTradeOrderConfig);
       };
     }

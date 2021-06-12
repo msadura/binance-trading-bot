@@ -1,23 +1,50 @@
+const binance = require('./binanceApi');
 const { MANUAL_WATCH_PAIRS } = require('./constants');
 const { getFilters } = require('./exchangeInfo');
 const { canTradePair } = require('./utils');
 
-function getWatchPairs(withLeverages = false) {
+async function getWatchPairs({ withLeverages, highVolume } = {}) {
   if (MANUAL_WATCH_PAIRS.length) {
     return MANUAL_WATCH_PAIRS;
   }
 
-  let USDTPairs = Object.keys(getFilters()).filter(p => p.includes('USDT'));
+  let USDTPairs = Object.keys(getFilters()).filter(p => p.endsWith('USDT'));
+  // some of down coin charts acts weird
+  USDTPairs = filterDown(USDTPairs);
+
   if (!withLeverages) {
-    USDTPairs = filterLeverages(USDTPairs);
+    USDTPairs = filterUp(USDTPairs);
   }
+
+  if (highVolume) {
+    USDTPairs = await filterHighVolume(USDTPairs);
+  }
+
   const USDTPairsFiltered = USDTPairs.filter(p => canTradePair(p));
 
   return USDTPairsFiltered;
 }
 
-function filterLeverages(pairsArray) {
-  return pairsArray.filter(p => !p.includes('UPUSDT') && !p.includes('DOWNUSDT'));
+function filterUp(pairsArray) {
+  return pairsArray.filter(p => !p.includes('UPUSDT'));
+}
+
+function filterDown(pairsArray) {
+  return pairsArray.filter(p => !p.includes('DOWNUSDT'));
+}
+
+async function filterHighVolume(pairsArray) {
+  const resp = await binance.prevDay(false);
+  const volumesObj = {};
+  resp.map(({ symbol, quoteVolume }) => (volumesObj[symbol] = Number(quoteVolume)));
+
+  const pairsWithVolumes = pairsArray.map(symbol => ({
+    symbol,
+    volume: volumesObj[symbol] || 0
+  }));
+  pairsWithVolumes.sort((a, b) => b.volume - a.volume);
+  // x best coins
+  return pairsWithVolumes.slice(0, 20).map(item => item.symbol);
 }
 
 module.exports = getWatchPairs;

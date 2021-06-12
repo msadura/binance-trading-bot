@@ -17,7 +17,6 @@ async function runApp() {
 
   await loadBalances();
   await loadAccountOrdersState();
-  logUsedRequestsLimit();
 
   // ---- end bootstrap phase ----
 

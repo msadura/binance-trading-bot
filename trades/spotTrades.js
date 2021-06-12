@@ -25,10 +25,11 @@ async function loadAccountOrdersState() {
       case 'STOP_LOSS_LIMIT': {
         openTrades[order.symbol] = {
           ...openTrades[order.symbol],
-          slId: order.orderId,
-          quantity: order.origQty,
-          slSell: order.price,
-          slStop: order.stopPrice
+          slId: Number(order.orderId),
+          quantity: Number(order.origQty),
+          slSell: Number(order.price),
+          slStop: Number(order.stopPrice),
+          symbol: order.symbol
         };
 
         break;
@@ -38,8 +39,8 @@ async function loadAccountOrdersState() {
         openTrades[order.symbol] = {
           ...openTrades[order.symbol],
           tpId: order.orderId,
-          quantity: order.origQty,
-          tpSell: order.price
+          quantity: Number(order.origQty),
+          tpSell: Number(order.price)
         };
 
         break;
@@ -86,6 +87,7 @@ async function buySpot(config) {
   }
 
   await loadBalances();
+  openTrades[symbol] = postTradeOrderConfig;
 
   return postTradeOrderConfig;
 

@@ -13,10 +13,26 @@ const watchOpenSpotTrades = require('./trades/watchOpenSpotTrades');
 
 const RISK_REWARD_RATIO = 1.5;
 const STOP_LOSS_SELL_RATIO = 0.005;
-const CANDLE_PERIOD = '1m';
+const CANDLE_PERIOD = '5m';
 
 async function watchFractalsStrategy() {
-  const watchPairs = getWatchPairs(true);
+  const watchPairs = await getWatchPairs({ withLeverages: true, highVolume: true });
+  // const watchPairs = [
+  //   'ETCUSDT',
+  //   'MATICUSDT',
+  //   'RUNEUSDT',
+  //   'BTCUSDT',
+  //   'DOGEUSDT',
+  //   'SXPUSDT',
+  //   'FTMUSDT',
+  //   'SOLUSDT',
+  //   'UNIUSDT',
+  //   'AVAXUSDT',
+  //   'ATOMUSDT',
+  //   'SRMUSDT',
+  //   'CRVUSDT'
+  // ];
+
   await prepareHistoricalOhlcData(watchPairs);
 
   const onCandle = (symbol, data) => {
@@ -27,13 +43,6 @@ async function watchFractalsStrategy() {
     checkForTradeSignal(symbol, ohlc);
   };
 
-  // queueTransaction('TRADE_ORDER', {
-  //   symbol: 'MATICUSDT',
-  //   slStop: 1.2,
-  //   slSell: 1.19,
-  //   tpSell: 1.5,
-  //   refPrice: 1.24
-  // });
   watchCandlesticks({ callback: onCandle, period: CANDLE_PERIOD, pairs: watchPairs });
   watchAccountUpdates();
   watchOpenSpotTrades(watchPairs);
