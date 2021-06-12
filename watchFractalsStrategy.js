@@ -1,12 +1,15 @@
-const { hasFundsToBuy, getBalance } = require('./balances');
-const binance = require('./binanceApi');
+const { hasFundsToBuy } = require('./balances');
+const { SINGLE_TRANSACTION_USD_AMOUNT } = require('./constants');
 const getWatchPairs = require('./getWatchPairs');
 const ema = require('./ohlc/indicators/ema');
 const williamsFractals = require('./ohlc/indicators/williamsFractals');
 const { loadCandlesForSymbols } = require('./ohlc/loadCandles');
-const { addOhlcPair, setOhlcData, getOhlc } = require('./ohlc/ohlcCache');
+const { addOhlcPair, setOhlcData } = require('./ohlc/ohlcCache');
 const watchCandlesticks = require('./ohlc/watchCandlesticks');
+const { queueTransaction } = require('./transactions');
 const { roundPricePrecision } = require('./utils');
+const watchAccountUpdates = require('./trades/watchAccountUpdates');
+const watchOpenTrades = require('./trades/watchOpenTrades');
 
 const RISK_REWARD_RATIO = 1.5;
 const STOP_LOSS_SELL_RATIO = 0.005;
@@ -21,18 +24,12 @@ async function watchFractalsStrategy() {
     ohlc = addIndicators(ohlc, { checkAll: false, symbol });
     ohlc = addOhlcPair(symbol, ohlc);
 
-    // check for buy signal
     checkForTradeSignal(symbol, ohlc);
-
-    // this will go to watch prices
-    // check for tp sell signal
-    // check for stop loss signal (emergency sell)
-
-    // add to transaction queue
   };
 
   watchCandlesticks({ callback: onCandle, period: CANDLE_PERIOD, pairs: watchPairs });
-  // watch trades ?
+  watchAccountUpdates();
+  watchOpenTrades();
 }
 
 function checkForTradeSignal(symbol, ohlc) {
@@ -42,8 +39,9 @@ function checkForTradeSignal(symbol, ohlc) {
   const isLong = isLongSignal(referenceCandle);
   if (isLong) {
     const prices = getPriceLevelsForLong(symbol, referenceCandle, lastCandle);
-    // queue buy :o
-    console.log('🔥 LONG SIGNAL', symbol, prices);
+    if (hasFundsToBuy(SINGLE_TRANSACTION_USD_AMOUNT)) {
+      queueTransaction('TRADE_ORDER', { symbol, ...prices });
+    }
   }
 }
 
