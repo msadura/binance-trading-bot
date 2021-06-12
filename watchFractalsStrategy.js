@@ -9,11 +9,11 @@ const watchCandlesticks = require('./ohlc/watchCandlesticks');
 const { queueTransaction } = require('./transactions');
 const { roundPricePrecision } = require('./utils');
 const watchAccountUpdates = require('./trades/watchAccountUpdates');
-const watchOpenTrades = require('./trades/watchOpenTrades');
+const watchOpenSpotTrades = require('./trades/watchOpenSpotTrades');
 
 const RISK_REWARD_RATIO = 1.5;
 const STOP_LOSS_SELL_RATIO = 0.005;
-const CANDLE_PERIOD = '5m';
+const CANDLE_PERIOD = '1m';
 
 async function watchFractalsStrategy() {
   const watchPairs = getWatchPairs(true);
@@ -27,9 +27,16 @@ async function watchFractalsStrategy() {
     checkForTradeSignal(symbol, ohlc);
   };
 
+  // queueTransaction('TRADE_ORDER', {
+  //   symbol: 'MATICUSDT',
+  //   slStop: 1.2,
+  //   slSell: 1.19,
+  //   tpSell: 1.5,
+  //   refPrice: 1.24
+  // });
   watchCandlesticks({ callback: onCandle, period: CANDLE_PERIOD, pairs: watchPairs });
   watchAccountUpdates();
-  watchOpenTrades();
+  watchOpenSpotTrades(watchPairs);
 }
 
 function checkForTradeSignal(symbol, ohlc) {

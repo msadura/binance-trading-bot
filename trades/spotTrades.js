@@ -72,12 +72,12 @@ async function buySpot(config) {
     return;
   }
 
-  console.log('💰', `${symbol} - Purchasing... - qty: ${quantity} price: ${refPrice}`);
-
   const { symbol, refPrice } = config;
   const quantity = getAmountToBuy(symbol, refPrice);
   const postTradeOrderConfig = { ...config };
   postTradeOrderConfig.quantity = quantity;
+
+  console.log('💰', `${symbol} - Purchasing... - qty: ${quantity} price: ${refPrice}`);
 
   if (!config.testTrade) {
     const resp = await binance.marketBuy(symbol, quantity);

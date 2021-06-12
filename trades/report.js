@@ -5,7 +5,7 @@ const tradesReport = {
   balanceDiff: 0
 };
 
-export function addTradeToReport(config, executedPrice, isWin) {
+function addTradeToReport(config, executedPrice, isWin) {
   const { symbol, refPrice } = config;
   tradesReport.count++;
   isWin ? tradesReport.wins++ : tradesReport.loses++;

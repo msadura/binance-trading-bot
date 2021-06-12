@@ -1,5 +1,6 @@
+const { setUSDTBalance } = require('../balances');
 const binance = require('../binanceApi');
-import { addTradeToReport } from './report';
+const { addTradeToReport } = require('./report');
 const { getSpotTrades, updateTrade } = require('./spotTrades');
 
 function watchAccountUpdates() {
@@ -9,11 +10,12 @@ function watchAccountUpdates() {
   function balanceUpdate(data) {
     for (let obj of data.B) {
       let { a: asset, f: available, l: onOrder } = obj;
-      // update usdt
-      if (available == '0.00000000') continue;
-      console.log(asset + '\tavailable: ' + available + ' (' + onOrder + ' on order)');
+      if (asset === 'USDT') {
+        setUSDTBalance({ available, onOrder });
+      }
     }
   }
+
   function executionUpdate(data) {
     let {
       x: executionType,
@@ -22,7 +24,7 @@ function watchAccountUpdates() {
       // q: quantity,
       S: side,
       o: orderType,
-      i: orderId,
+      // i: orderId,
       // X: orderStatus,
       L: executedPrice
     } = data;
@@ -42,24 +44,15 @@ function watchAccountUpdates() {
       // sell oco tp
       if (side === 'SELL' && executionType === 'TRADE' && orderType === 'LIMIT_MAKER') {
         addTradeToReport(openTrade, executedPrice, true);
+        updateTrade(symbol, null);
       }
 
       // sell sl qq
       if (side === 'SELL' && executionType === 'TRADE' && orderType === 'STOP_LOSS_LIMIT') {
         addTradeToReport(openTrade, executedPrice, false);
+        updateTrade(symbol, null);
       }
     }
-
-    //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
-    console.log(
-      symbol + '\t' + side + ' ' + executionType + ' ' + orderType + ' ORDER #' + orderId
-      // tp sell:
-      //ETHUSDT	SELL TRADE LIMIT_MAKER ORDER #4590956796
-
-      //sl sell
-      //ETHUSDT	SELL TRADE STOP_LOSS_LIMIT ORDER #4591220541
-    );
-    console.log('🔥 data', executedPrice);
   }
 
   binance.websockets.userData(balanceUpdate, executionUpdate);

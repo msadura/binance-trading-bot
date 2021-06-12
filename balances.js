@@ -22,9 +22,13 @@ function getUSDTBalance() {
   return balances.USDT;
 }
 
+function setUSDTBalance(balance) {
+  balances.USDT = balance;
+}
+
 function hasFundsToBuy(buyAmount) {
   const hasFunds = Number(getUSDTBalance().available) >= buyAmount;
   return hasFunds;
 }
 
-module.exports = { loadBalances, getBalance, getUSDTBalance, hasFundsToBuy };
+module.exports = { loadBalances, getBalance, getUSDTBalance, setUSDTBalance, hasFundsToBuy };

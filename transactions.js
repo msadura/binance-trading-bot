@@ -4,10 +4,10 @@ const pendingTransactions = {};
 let transactionInProgress = false;
 
 const transactionQueue = {
-  buy: [],
-  postBuy: [],
-  tpSell: [],
-  slSell: []
+  TRADE_ORDER: [],
+  POST_TRADE_ORDER: [],
+  TP_SELL: [],
+  SL_SELL: []
 };
 
 function finishTransaction(symbol) {
@@ -40,22 +40,7 @@ async function nextTransaction(force) {
     return;
   }
 
-  let next = null;
-  if (transactionQueue.postBuy.length) {
-    next = { type: 'POST_TRADE_ORDER', config: transactionQueue.postBuy.shift() };
-  }
-
-  if (transactionQueue.slSell.length) {
-    next = { type: 'SL_SELL', config: transactionQueue.slSell.shift() };
-  }
-
-  if (transactionQueue.tpSell.length) {
-    next = { type: 'TP_SELL', config: transactionQueue.tpSell.shift() };
-  }
-
-  if (transactionQueue.buy.length) {
-    next = { type: 'TRADE_ORDER', config: transactionQueue.buy.shift() };
-  }
+  const next = getNextTransaction();
 
   if (!next) {
     return;
@@ -66,13 +51,36 @@ async function nextTransaction(force) {
   finishTransaction();
 }
 
+function getNextTransaction() {
+  // sorted by priorities
+  // POST_TRADE_ORDER sets stop losses and tp so it has highest priority
+  if (transactionQueue.POST_TRADE_ORDER.length) {
+    return { type: 'POST_TRADE_ORDER', config: transactionQueue.POST_TRADE_ORDER.shift() };
+  }
+
+  if (transactionQueue.SL_SELL.length) {
+    return { type: 'SL_SELL', config: transactionQueue.SL_SELL.shift() };
+  }
+
+  if (transactionQueue.TP_SELL.length) {
+    return { type: 'TP_SELL', config: transactionQueue.TP_SELL.shift() };
+  }
+
+  if (transactionQueue.TRADE_ORDER.length) {
+    return { type: 'TRADE_ORDER', config: transactionQueue.TRADE_ORDER.shift() };
+  }
+}
+
 async function runTransation(type, config, retries = 0) {
   try {
     const action = getActionForType(type, config);
     if (action) {
       await action();
+    } else {
+      console.log('🔥', 'no action?', type, config);
     }
   } catch (e) {
+    console.log('🔥 transaction error:', e);
     if (retries < 3) {
       retries = retries + 1;
       runTransation(type, config, retries + 1);
@@ -89,6 +97,7 @@ function getActionForType(type, config) {
       //spot buy default, add support for futures
       return async () => {
         const postTradeOrderConfig = await buySpot(config);
+        console.log('🔥', 'post trade order', postTradeOrderConfig);
         queueTransaction('POST_TRADE_ORDER', postTradeOrderConfig);
       };
     }
