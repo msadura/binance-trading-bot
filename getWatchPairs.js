@@ -44,7 +44,7 @@ async function filterHighVolume(pairsArray) {
   }));
   pairsWithVolumes.sort((a, b) => b.volume - a.volume);
   // x best coins
-  return pairsWithVolumes.slice(0, 20).map(item => item.symbol);
+  return pairsWithVolumes.slice(0, 80).map(item => item.symbol);
 }
 
 module.exports = getWatchPairs;

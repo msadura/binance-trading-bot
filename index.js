@@ -6,7 +6,7 @@ const { logUsedRequestsLimit } = require('./utils');
 const { loadAccountOrdersState } = require('./trades/spotTrades');
 // const watchAccountUpdates = require('./trades/watchAccountUpdates');
 
-const watchFractalsStrategy = require('./watchFractalsStrategy');
+const watchFractalsStrategy = require('./watchFractals50Strategy');
 
 runApp();
 

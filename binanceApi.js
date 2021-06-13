@@ -5,7 +5,7 @@ const config = {
   APISECRET: process.env.BINANCE_SECRET,
   useServerTime: true,
   recvWindow: 60000,
-  verbose: true,
+  verbose: false,
   // Change to tru for fake transactions
   test: false
 };

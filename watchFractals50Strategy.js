@@ -14,7 +14,7 @@ const { getSpotTrades } = require('./trades/spotTrades');
 
 const RISK_REWARD_RATIO = 1.5;
 const STOP_LOSS_SELL_RATIO = 0.005;
-const CANDLE_PERIOD = '1m';
+const CANDLE_PERIOD = '5m';
 
 async function watchFractalsStrategy() {
   const watchPairs = await getWatchPairs({ withLeverages: true, highVolume: true });
@@ -51,7 +51,7 @@ async function watchFractalsStrategy() {
 
 function checkForTradeSignal(symbol, ohlc) {
   const openTrades = getSpotTrades();
-  if (openTrades[symbol]) {
+  if (openTrades.symbol) {
     return;
   }
 
@@ -73,15 +73,15 @@ function isLongSignal(candle) {
     return false;
   }
 
-  // emas with correct size ema20 > ema50 > ema100
+  // emas with correct size ema20 > ema50
   const ema = candle.ema;
-  if (ema[20] < ema[50] || ema[50] < ema[100]) {
+  if (ema[20] < ema[50]) {
     return false;
   }
 
   const { low } = candle;
-  // low price is lower than ema20 and higher than ema100
-  if (low > ema[20] || low < ema[100]) {
+  // low price is lower than ema20 and higher than ema50
+  if (low > ema[20] || low < ema[50]) {
     return false;
   }
 
@@ -90,7 +90,7 @@ function isLongSignal(candle) {
 }
 
 function getPriceLevelsForLong(symbol, referenceCandle, lastCandle) {
-  const slEmaType = referenceCandle.low < referenceCandle.ema[50] ? 100 : 50;
+  const slEmaType = 50;
   const { close: currentPrice } = lastCandle;
 
   const slStop = roundPricePrecision(symbol, lastCandle.ema[slEmaType]);
