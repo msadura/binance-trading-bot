@@ -10,7 +10,7 @@ const { queueTransaction } = require('./transactions');
 const { roundPricePrecision } = require('./utils');
 const watchAccountUpdates = require('./trades/watchAccountUpdates');
 const watchOpenSpotTrades = require('./trades/watchOpenSpotTrades');
-const { getSpotTrades } = require('./trades/spotTrades');
+const { getSpotTrades, watchIdle } = require('./trades/spotTrades');
 
 const RISK_REWARD_RATIO = 1.5;
 const STOP_LOSS_SELL_RATIO = 0.005;
@@ -47,6 +47,7 @@ async function watchFractalsStrategy() {
   watchCandlesticks({ callback: onCandle, period: CANDLE_PERIOD, pairs: watchPairs });
   watchAccountUpdates();
   watchOpenSpotTrades(watchPairs);
+  watchIdle(config => queueTransaction('SL_SELL', config));
 }
 
 function checkForTradeSignal(symbol, ohlc) {

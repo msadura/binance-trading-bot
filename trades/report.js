@@ -2,13 +2,13 @@ const tradesReport = {
   count: 0,
   wins: 0,
   loses: 0,
+  idle: 0,
   balanceDiff: 0
 };
 
-function addTradeToReport(config, executedPrice, isWin) {
+function addTradeToReport(config, executedPrice, type) {
   const { symbol, refPrice } = config;
   tradesReport.count++;
-  isWin ? tradesReport.wins++ : tradesReport.loses++;
 
   const priceDiff = refPrice ? Number(executedPrice) - refPrice : null;
   const balanceDiff = priceDiff ? priceDiff * config.quantity : null;
@@ -17,24 +17,43 @@ function addTradeToReport(config, executedPrice, isWin) {
     tradesReport.balanceDiff = tradesReport.balanceDiff + balanceDiff;
   }
 
-  if (isWin) {
-    console.log(
-      '💰 🟢',
-      `${symbol} TP HIT! buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
-        balanceDiff || '-'
-      }`
-    );
-    console.log('🔥 Summary:', tradesReport);
-  } else {
-    console.log(
-      '💥 🔴',
-      `${symbol} SL HIT :( buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
-        balanceDiff || '-'
-      }`
-    );
+  switch (type) {
+    case 'win': {
+      tradesReport.wins++;
 
-    console.log('🔥 Summary:', tradesReport);
+      console.log(
+        '💰 🟢',
+        `${symbol} TP HIT! buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
+          balanceDiff || '-'
+        }`
+      );
+      break;
+    }
+    case 'loss': {
+      tradesReport.loses++;
+
+      console.log(
+        '💥 🔴',
+        `${symbol} SL HIT :( buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
+          balanceDiff || '-'
+        }`
+      );
+      break;
+    }
+    case 'idle': {
+      tradesReport.idle++;
+
+      console.log(
+        '💥 🟡',
+        `${symbol} IDLE SELL - buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
+          balanceDiff || '-'
+        }`
+      );
+      break;
+    }
   }
+
+  console.log('🔥 Summary:', tradesReport);
 
   // send stats to db, send email etc
 }

@@ -41,15 +41,21 @@ function watchAccountUpdates() {
         updateTrade(symbol, updatedTrade);
       }
 
+      //update market purchase price
+      if (side === 'SELL' && executionType === 'TRADE' && orderType === 'MARKET') {
+        addTradeToReport(openTrade, executedPrice, 'idle');
+        updateTrade(symbol, null);
+      }
+
       // sell oco tp
       if (side === 'SELL' && executionType === 'TRADE' && orderType === 'LIMIT_MAKER') {
-        addTradeToReport(openTrade, executedPrice, true);
+        addTradeToReport(openTrade, executedPrice, 'win');
         updateTrade(symbol, null);
       }
 
       // sell sl qq
       if (side === 'SELL' && executionType === 'TRADE' && orderType === 'STOP_LOSS_LIMIT') {
-        addTradeToReport(openTrade, executedPrice, false);
+        addTradeToReport(openTrade, executedPrice, 'loss');
         updateTrade(symbol, null);
       }
     }

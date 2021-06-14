@@ -6,6 +6,7 @@ const { roundQtyPrecision } = require('../utils');
 const { getBalance, loadBalances, hasFundsToBuy } = require('../balances');
 
 const openTrades = {};
+const IDLE_MINUTES_TRIGGER = 60;
 
 async function loadAccountOrdersState() {
   const res = await binance.openOrders();
@@ -77,6 +78,7 @@ async function buySpot(config) {
   const quantity = getAmountToBuy(symbol, refPrice);
   const postTradeOrderConfig = { ...config };
   postTradeOrderConfig.quantity = quantity;
+  postTradeOrderConfig.timestamp = new Date().getTime();
 
   console.log('💰', `${symbol} - Purchasing... - qty: ${quantity} price: ${refPrice}`);
 
@@ -249,6 +251,29 @@ async function closePositionMarket(config, isTpSell) {
   console.log('🔴', `${symbol} - trade manually liquidated`);
 }
 
+async function sellIdleSymbols(onIdleCallback) {
+  console.log('ℹ️', `Checking for idle coins...`);
+  const nowTimestamp = new Date().getTime();
+  const openOrders = getSpotTrades();
+  Object.entries(openOrders).forEach(async ([symbol, data]) => {
+    if (!data) {
+      return;
+    }
+
+    const timeDiffMinutes = Math.floor((nowTimestamp - data.timestamp) / 1000 / 60);
+
+    if (timeDiffMinutes > IDLE_MINUTES_TRIGGER) {
+      console.log('🔴', `${symbol} - Selling idle coin...`);
+      onIdleCallback(data);
+    }
+  });
+}
+
+async function watchIdle(onIdleCallback) {
+  // Check every 15mins
+  setInterval(() => sellIdleSymbols(onIdleCallback), 1000 * 60 * 15);
+}
+
 module.exports = {
   loadAccountOrdersState,
   getSpotTrades,
@@ -257,5 +282,6 @@ module.exports = {
   buySpot,
   setStopLoss,
   setOCOSell,
-  closePositionMarket
+  closePositionMarket,
+  watchIdle
 };
