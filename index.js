@@ -2,11 +2,12 @@ require('dotenv').config();
 const binance = require('./binanceApi');
 const { loadBalances } = require('./balances');
 const { loadExchangeInfo } = require('./exchangeInfo');
-const { logUsedRequestsLimit } = require('./utils');
 const { loadAccountOrdersState } = require('./trades/spotTrades');
 // const watchAccountUpdates = require('./trades/watchAccountUpdates');
 
+// const watchFractalsStrategy = require('./watchFractals50Strategy');
 const watchFractalsStrategy = require('./watchFractals50Strategy');
+const watchEngulfingStrategy = require('./watchRsiEmaEngulfingStrategy');
 
 runApp();
 
@@ -35,5 +36,6 @@ async function runApp() {
   // watchLivePricesStrategy();
   // watchHeikinAshiStrategy();
   // watchAccountUpdates();
-  watchFractalsStrategy();
+  // watchFractalsStrategy();
+  watchEngulfingStrategy();
 }

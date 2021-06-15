@@ -1,25 +1,26 @@
 const tradesReport = {
-  count: 0,
-  wins: 0,
-  loses: 0,
-  idle: 0,
-  balanceDiff: 0
+  all: 0,
+  w: 0,
+  l: 0,
+  i: 0,
+  diff: 0
 };
 
 function addTradeToReport(config, executedPrice, type) {
   const { symbol, refPrice } = config;
-  tradesReport.count++;
+  tradesReport.all++;
 
   const priceDiff = refPrice ? Number(executedPrice) - refPrice : null;
-  const balanceDiff = priceDiff ? priceDiff * config.quantity : null;
+  let balanceDiff = priceDiff ? priceDiff * config.quantity : null;
 
   if (balanceDiff) {
-    tradesReport.balanceDiff = tradesReport.balanceDiff + balanceDiff;
+    balanceDiff = Number(balanceDiff.toFixed(2));
+    tradesReport.diff = tradesReport.diff + balanceDiff;
   }
 
   switch (type) {
     case 'win': {
-      tradesReport.wins++;
+      tradesReport.w++;
 
       console.log(
         '💰 🟢',
@@ -30,7 +31,7 @@ function addTradeToReport(config, executedPrice, type) {
       break;
     }
     case 'loss': {
-      tradesReport.loses++;
+      tradesReport.l++;
 
       console.log(
         '💥 🔴',
@@ -41,7 +42,7 @@ function addTradeToReport(config, executedPrice, type) {
       break;
     }
     case 'idle': {
-      tradesReport.idle++;
+      tradesReport.i++;
 
       console.log(
         '💥 🟡',
