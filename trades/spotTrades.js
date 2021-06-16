@@ -70,11 +70,12 @@ function getAmountToBuy(symbol, refPrice) {
 }
 
 async function buySpot(config) {
-  if (!config || !hasFundsToBuy(SINGLE_TRANSACTION_USD_AMOUNT)) {
+  const { symbol, refPrice } = config;
+
+  if (!config || !hasFundsToBuy(SINGLE_TRANSACTION_USD_AMOUNT) || openTrades[symbol]) {
     return;
   }
 
-  const { symbol, refPrice } = config;
   const quantity = getAmountToBuy(symbol, refPrice);
   const postTradeOrderConfig = { ...config };
   postTradeOrderConfig.quantity = quantity;
@@ -251,7 +252,7 @@ async function closePositionMarket(config, isTpSell) {
   console.log('🔴', `${symbol} - trade manually liquidated`);
 }
 
-async function sellIdleSymbols(onIdleCallback) {
+async function sellIdleSymbols(onIdleCallback, idleTime = IDLE_MINUTES_TRIGGER) {
   console.log('ℹ️', `Checking for idle coins...`);
   const nowTimestamp = new Date().getTime();
   const openOrders = getSpotTrades();
@@ -262,7 +263,7 @@ async function sellIdleSymbols(onIdleCallback) {
 
     const timeDiffMinutes = Math.floor((nowTimestamp - data.timestamp) / 1000 / 60);
 
-    if (timeDiffMinutes > IDLE_MINUTES_TRIGGER) {
+    if (timeDiffMinutes > idleTime) {
       console.log('🔴', `${symbol} - Selling idle coin...`);
       onIdleCallback(data);
     }
