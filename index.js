@@ -9,6 +9,7 @@ const { loadAccountOrdersState } = require('./trades/spotTrades');
 const watchFractalsStrategy = require('./watchFractals50Strategy');
 const watchEngulfingStrategy = require('./watchRsiEmaEngulfingStrategy');
 const watchEmaStochRsiAtrStrategy = require('./watchEmaStochRsiAtrStrategy');
+const watchEmaCrossMacdStrategy = require('./watchEmaCrossMacdStrategy');
 
 runApp();
 
@@ -39,5 +40,6 @@ async function runApp() {
   // watchAccountUpdates();
   // watchFractalsStrategy();
   // watchEngulfingStrategy();
-  watchEmaStochRsiAtrStrategy();
+  // watchEmaStochRsiAtrStrategy();
+  watchEmaCrossMacdStrategy();
 }
