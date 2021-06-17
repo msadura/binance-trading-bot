@@ -33,11 +33,9 @@ async function runApp() {
   // setStopLoss('MATICUSDT', 9.16, 0.852);
   // liquidateStopLoss('SRMBUSD');
   // console.log('🔥', roundPricePrecision('MATICUSDT', '8.12349080809098'));
+  // watchAccountUpdates();
 
   // ---- use selected trade strategy ----
-  // watchLivePricesStrategy();
-  // watchHeikinAshiStrategy();
-  // watchAccountUpdates();
   // watchFractalsStrategy();
   // watchEngulfingStrategy();
   // watchEmaStochRsiAtrStrategy();

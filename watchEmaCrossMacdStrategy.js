@@ -59,13 +59,13 @@ function checkForTradeSignal(symbol, ohlc) {
 
   const lastCandle = ohlc[ohlc.length - 1];
   const prevCandle = ohlc[ohlc.length - 2];
-  const isLong = isLongSignal(lastCandle, prevCandle);
 
   if (openTrades.symbol && isClosePositionSignal(lastCandle, prevCandle)) {
     console.log('🔥', 'MANUAL SELL CONDITIONS MET');
     queueTransaction('SL_SELL', openTrades.symbol);
   }
-
+  // console.log('🔥 symbol check:', symbol, ohlc);
+  const isLong = isLongSignal(lastCandle, prevCandle);
   if (!openTrades.symbol && isLong) {
     const prices = getPriceLevelsForLong(symbol, lastCandle);
     // console.log('🔥', 'GOT TRADE SIGNAL!', { symbol, ...prices });
@@ -75,6 +75,12 @@ function checkForTradeSignal(symbol, ohlc) {
 }
 
 function isLongSignal(candle, prevCandle) {
+  // lacking indicators
+  if (!candle.ema || !candle.macd) {
+    return false;
+  }
+
+  // ema[10] > ema[30]
   if (candle.ema[10] < candle.ema[30]) {
     return false;
   }
@@ -100,6 +106,10 @@ function isLongSignal(candle, prevCandle) {
 
 function isClosePositionSignal(candle, prevCandle) {
   // macd: MACD - red, signal - green
+
+  if (!candle.ema || !candle.macd) {
+    return false;
+  }
 
   if (candle.ema[10] <= candle.ema[30]) {
     return true;
