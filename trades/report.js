@@ -46,7 +46,7 @@ function addTradeToReport(config, executedPrice, type) {
 
       console.log(
         '💥 🟡',
-        `${symbol} IDLE SELL - buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
+        `${symbol} MANUAL SELL - buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
           balanceDiff || '-'
         }`
       );

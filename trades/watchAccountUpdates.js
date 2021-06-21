@@ -34,6 +34,11 @@ function watchAccountUpdates() {
 
     const openTrades = getSpotTrades();
     const openTrade = openTrades[symbol];
+
+    // console.log(
+    //   '🔥 SOCKET TRADE UPDATE:',
+    //   `${symbol} - side: ${side}, order type: ${orderType}, execution type: ${executionType}`
+    // );
     if (openTrade) {
       //update market purchase price
       if (side === 'BUY' && executionType === 'TRADE' && orderType === 'MARKET') {

@@ -30,7 +30,8 @@ async function loadAccountOrdersState() {
           quantity: Number(order.origQty),
           slSell: Number(order.price),
           slStop: Number(order.stopPrice),
-          symbol: order.symbol
+          symbol: order.symbol,
+          side: 'BUY'
         };
 
         break;
@@ -41,11 +42,23 @@ async function loadAccountOrdersState() {
           ...openTrades[order.symbol],
           tpId: order.orderId,
           quantity: Number(order.origQty),
-          tpSell: Number(order.price)
+          tpSell: Number(order.price),
+          side: 'BUY'
         };
 
         break;
       }
+    }
+  });
+
+  Object.keys(openTrades).forEach(k => {
+    // temp shit, find better solution (pass ratio)
+    const ratio = 5;
+    const { tpSell, slStop } = openTrades[k];
+    const diff = tpSell - slStop;
+    const refPrice = slStop + diff / ratio;
+    if (refPrice) {
+      openTrades[k].refPrice = refPrice;
     }
   });
 
@@ -121,6 +134,20 @@ async function buySpot(config) {
   // };
 }
 
+async function cancelCurrentOrders(symbol) {
+  const openTrades = getSpotTrades();
+  const openTrade = openTrades[symbol];
+
+  if (openTrade) {
+    console.log('🟡', `${symbol} - cancelling existing orders`);
+    try {
+      await binance.cancelAll(symbol);
+    } catch (e) {
+      logResponseError(e);
+    }
+  }
+}
+
 async function setStopLoss(config) {
   if (!config) {
     return;
@@ -130,13 +157,8 @@ async function setStopLoss(config) {
   const openTrade = openTrades[symbol];
   let slQuantity = quantity || openTrade?.qty;
 
-  if (openTrade && openTrade.slId && testTrade) {
-    console.log('🟡', `${symbol} - cancelling previous stop loss order - id: ${openTrade.slId}`);
-    try {
-      await binance.cancel(symbol, openTrade.id);
-    } catch (e) {
-      logResponseError(e);
-    }
+  if (openTrade && openTrade.slId && !testTrade) {
+    await cancelCurrentOrders(symbol);
   }
 
   if (!testTrade) {
@@ -187,6 +209,8 @@ async function setOCOSell(config) {
   }
   const { testTrade, symbol, quantity, tpSell, slStop, slSell } = config;
   const ocoConfig = { ...config };
+
+  await cancelCurrentOrders(symbol);
 
   if (!testTrade) {
     try {
@@ -246,7 +270,10 @@ async function closePositionMarket(config, isTpSell) {
     }
   }
 
-  openTrades[symbol] = null;
+  // quick qorkaoround - give socket time to update trade
+  setTimeout(() => {
+    openTrades[symbol] = null;
+  }, 1000);
 
   await loadBalances();
   console.log('🔴', `${symbol} - trade manually liquidated`);
