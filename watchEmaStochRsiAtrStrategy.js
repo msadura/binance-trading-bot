@@ -59,9 +59,17 @@ function checkForTradeSignal(symbol, ohlc) {
 
   const lastCandle = ohlc[ohlc.length - 1];
   const prevCandle = ohlc[ohlc.length - 2];
+
+  const updatePriceConfig = getPriceUpdateConfig(symbol, lastCandle);
+  if (updatePriceConfig) {
+    console.log('🔥', `${symbol} - SL / TP Level update`);
+    queueTransaction('POST_TRADE_ORDER', updatePriceConfig);
+    return;
+  }
+
   const isLong = isLongSignal(lastCandle, prevCandle);
   if (isLong) {
-    const prices = getPriceLevelsForLong(symbol, lastCandle);
+    const prices = getPriceUpdateConfig(symbol, lastCandle);
     if (hasFundsToBuy(SINGLE_TRANSACTION_USD_AMOUNT)) {
       // console.log('🔥', 'GOT TRADE SIGNAL!', { symbol, ...prices });
       // console.log('🔥 candle', lastCandle);
@@ -94,7 +102,19 @@ function isLongSignal(candle, prevCandle) {
   return true;
 }
 
-function getPriceLevelsForLong(symbol, lastCandle) {
+function getPriceUpdateConfig(symbol, candle) {
+  const openTrades = getSpotTrades();
+  const trade = openTrades[symbol];
+  if (!trade) {
+    return;
+  }
+
+  if (trade.side === 'BUY') {
+    return getLongPriceUpdateConfig(trade, candle);
+  }
+}
+
+function getLongPriceUpdateConfig(symbol, lastCandle) {
   const { close: currentPrice, atr } = lastCandle;
 
   const slStop = roundPricePrecision(symbol, currentPrice - atr * 3);

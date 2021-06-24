@@ -1,4 +1,4 @@
-const { roundPricePrecision } = require('../utils');
+const { roundPricePrecision } = require('../../utils');
 
 function heikinAshi(ohlcArray, symbol) {
   if (!ohlcArray || ohlcArray.length === 0) {

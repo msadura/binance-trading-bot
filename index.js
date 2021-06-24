@@ -19,7 +19,7 @@ async function runApp() {
   await loadExchangeInfo();
 
   await loadBalances();
-  await loadAccountOrdersState();
+  await loadAccountOrdersState(); //move to strategy
 
   // ---- end bootstrap phase ----
 
