@@ -1,5 +1,3 @@
-const { hasFundsToBuy } = require('./balances');
-const { SINGLE_TRANSACTION_USD_AMOUNT } = require('./constants');
 const getWatchPairs = require('./getWatchPairs');
 const ema = require('./ohlc/indicators/ema');
 const { loadCandlesForSymbols } = require('./ohlc/loadCandles');
@@ -9,14 +7,19 @@ const { queueTransaction } = require('./transactions');
 const { roundPricePrecision } = require('./utils');
 const watchAccountUpdates = require('./trades/watchAccountUpdates');
 const watchOpenSpotTrades = require('./trades/watchOpenSpotTrades');
-const { getSpotTrades, watchIdle } = require('./trades/spotTrades');
+const { getSpotTrades } = require('./trades/spotTrades');
 const stochasticRSI = require('./ohlc/indicators/stochasticRsi');
 const atr = require('./ohlc/indicators/atr');
+const { loadAccountOrdersState } = require('./trades/spotTrades');
 
 const STOP_LOSS_SELL_RATIO = 0.005;
 const CANDLE_PERIOD = '1h';
+const RISK_REWARD_RATIO = 0.67;
+const PRICE_UPDATE_RANGE_RATIO = 1; // 0,5 * atr
 
 async function watchEmaStochRsiAtrStrategy() {
+  await loadAccountOrdersState(RISK_REWARD_RATIO);
+
   const watchPairs = await getWatchPairs({ withLeverages: true, highVolume: true });
   // const watchPairs = [
   //   'ETCUSDT',
@@ -47,8 +50,8 @@ async function watchEmaStochRsiAtrStrategy() {
 
   watchCandlesticks({ callback: onCandle, period: CANDLE_PERIOD, pairs: watchPairs });
   watchAccountUpdates();
-  watchOpenSpotTrades(watchPairs);
-  watchIdle(config => queueTransaction('SL_SELL', config), 60 * 5);
+  watchOpenSpotTrades(watchPairs, { priceUpdateCb: onPriceUpdate });
+  // watchIdle(config => queueTransaction('SL_SELL', config), 60 * 5);
 }
 
 function checkForTradeSignal(symbol, ohlc) {
@@ -60,21 +63,18 @@ function checkForTradeSignal(symbol, ohlc) {
   const lastCandle = ohlc[ohlc.length - 1];
   const prevCandle = ohlc[ohlc.length - 2];
 
-  const updatePriceConfig = getPriceUpdateConfig(symbol, lastCandle);
-  if (updatePriceConfig) {
-    console.log('🔥', `${symbol} - SL / TP Level update`);
-    queueTransaction('POST_TRADE_ORDER', updatePriceConfig);
-    return;
-  }
+  // onPriceUpdate(symbol, lastCandle.close);
 
   const isLong = isLongSignal(lastCandle, prevCandle);
-  if (isLong) {
-    const prices = getPriceUpdateConfig(symbol, lastCandle);
-    if (hasFundsToBuy(SINGLE_TRANSACTION_USD_AMOUNT)) {
-      // console.log('🔥', 'GOT TRADE SIGNAL!', { symbol, ...prices });
-      // console.log('🔥 candle', lastCandle);
-      queueTransaction('TRADE_ORDER', { symbol, ...prices });
-    }
+  if (!openTrades[symbol] && isLong) {
+    const prices = getPriceLevelsForLong(symbol, {
+      priceRange: lastCandle.atr,
+      currentPrice: lastCandle.close
+    });
+
+    // console.log('🔥', 'GOT TRADE SIGNAL!', { symbol, ...prices });
+    // console.log('🔥 candle', lastCandle);
+    queueTransaction('TRADE_ORDER', { symbol, ...prices });
   }
 }
 
@@ -102,7 +102,7 @@ function isLongSignal(candle, prevCandle) {
   return true;
 }
 
-function getPriceUpdateConfig(symbol, candle) {
+function getPriceUpdateConfig(symbol, price) {
   const openTrades = getSpotTrades();
   const trade = openTrades[symbol];
   if (!trade) {
@@ -110,19 +110,35 @@ function getPriceUpdateConfig(symbol, candle) {
   }
 
   if (trade.side === 'BUY') {
-    return getLongPriceUpdateConfig(trade, candle);
+    return getLongPriceUpdateConfig(trade, price);
   }
 }
 
-function getLongPriceUpdateConfig(symbol, lastCandle) {
-  const { close: currentPrice, atr } = lastCandle;
+function getLongPriceUpdateConfig(trade, price) {
+  if (trade.refPrice >= price) {
+    return null;
+  }
 
-  const slStop = roundPricePrecision(symbol, currentPrice - atr * 3);
+  const { refPrice, priceUpdateRange, symbol } = trade;
+  if (price > refPrice + priceUpdateRange) {
+    const updatedPrices = getPriceLevelsForLong(symbol, {
+      currentPrice: price,
+      priceRange: priceUpdateRange
+    });
+
+    return { ...trade, ...updatedPrices };
+  }
+}
+
+function getPriceLevelsForLong(symbol, { currentPrice, priceRange }) {
+  const slRange = priceRange * 3;
+  const slStop = roundPricePrecision(symbol, currentPrice - slRange);
   const slSell = roundPricePrecision(symbol, slStop - slStop * STOP_LOSS_SELL_RATIO);
-  const tpSell = roundPricePrecision(symbol, currentPrice + atr * 2);
+  const tpSell = roundPricePrecision(symbol, currentPrice + slRange * RISK_REWARD_RATIO);
   const refPrice = roundPricePrecision(symbol, currentPrice);
+  const priceUpdateRange = priceRange * PRICE_UPDATE_RANGE_RATIO;
 
-  return { slStop, slSell, tpSell, refPrice };
+  return { slStop, slSell, tpSell, refPrice, priceUpdateRange };
 }
 
 async function prepareHistoricalOhlcData(watchPairs) {
@@ -150,6 +166,15 @@ function addIndicators(ohlcArray, { symbol, checkAll } = {}) {
   //stoch rsi
 
   return data;
+}
+
+function onPriceUpdate(symbol, price) {
+  const updatePriceConfig = getPriceUpdateConfig(symbol, price);
+  if (updatePriceConfig) {
+    console.log('🔥', `${symbol} - SL / TP Level update`);
+    queueTransaction('POST_TRADE_ORDER', updatePriceConfig);
+    return true;
+  }
 }
 
 module.exports = watchEmaStochRsiAtrStrategy;

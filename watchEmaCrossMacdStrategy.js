@@ -10,6 +10,7 @@ const watchOpenSpotTrades = require('./trades/watchOpenSpotTrades');
 const { getSpotTrades } = require('./trades/spotTrades');
 const macd = require('./ohlc/indicators/macd');
 const atr = require('./ohlc/indicators/atr');
+const { loadAccountOrdersState } = require('./trades/spotTrades');
 
 const STOP_LOSS_SELL_RATIO = 0.005;
 const RISK_REWARD_RATIO = 1.5;
@@ -19,6 +20,8 @@ const CANDLE_PERIOD = '1h';
 let watchPairs = [];
 
 async function watchEmaCrossMacd() {
+  await loadAccountOrdersState(RISK_REWARD_RATIO);
+
   watchPairs = await getWatchPairs({ withLeverages: true, highVolume: true });
   // const watchPairs = [
   //   'ETCUSDT',
@@ -45,7 +48,6 @@ async function watchEmaCrossMacd() {
     ohlc = addOhlcPair(symbol, ohlc);
 
     checkForTradeSignal(symbol, ohlc);
-    // console.log('🔥 last candle', ohlc[ohlc.length - 1]);
   };
 
   watchCandlesticks({ callback: onCandle, period: CANDLE_PERIOD, pairs: watchPairs });
@@ -68,7 +70,7 @@ function checkForTradeSignal(symbol, ohlc) {
     return;
   }
 
-  const updatePriceConfig = getPriceUpdateConfig(symbol, lastCandle);
+  const updatePriceConfig = getPriceUpdateConfig(symbol, lastCandle.close);
   if (updatePriceConfig) {
     console.log('🔥', `${symbol} - SL / TP Level update`);
     queueTransaction('POST_TRADE_ORDER', updatePriceConfig);
@@ -123,7 +125,7 @@ function isLongSignal(candle, prevCandle) {
   return false;
 }
 
-function getPriceUpdateConfig(symbol, candle) {
+function getPriceUpdateConfig(symbol, price) {
   const openTrades = getSpotTrades();
   const trade = openTrades[symbol];
   if (!trade) {
@@ -131,19 +133,19 @@ function getPriceUpdateConfig(symbol, candle) {
   }
 
   if (trade.side === 'BUY') {
-    return getLongPriceUpdateConfig(trade, candle);
+    return getLongPriceUpdateConfig(trade, price);
   }
 }
 
-function getLongPriceUpdateConfig(trade, candle) {
-  if (trade.refPrice >= candle.close) {
+function getLongPriceUpdateConfig(trade, price) {
+  if (trade.refPrice >= price) {
     return null;
   }
 
   const { refPrice, priceUpdateRange, symbol } = trade;
-  if (candle.close > refPrice + priceUpdateRange) {
+  if (price > refPrice + priceUpdateRange) {
     const updatedPrices = getPriceLevelsForLong(symbol, {
-      currentPrice: candle.close,
+      currentPrice: price,
       priceRange: priceUpdateRange
     });
 
@@ -176,12 +178,10 @@ function isClosePositionSignal(candle) {
 }
 
 function getPriceLevelsForLong(symbol, { currentPrice, priceRange }) {
-  const slStop = roundPricePrecision(symbol, currentPrice - priceRange * ATR_SL_RATIO);
+  const slRange = priceRange * ATR_SL_RATIO;
+  const slStop = roundPricePrecision(symbol, currentPrice - slRange);
   const slSell = roundPricePrecision(symbol, slStop - slStop * STOP_LOSS_SELL_RATIO);
-  const tpSell = roundPricePrecision(
-    symbol,
-    currentPrice + priceRange * ATR_SL_RATIO * RISK_REWARD_RATIO
-  );
+  const tpSell = roundPricePrecision(symbol, currentPrice + slRange * RISK_REWARD_RATIO);
   const refPrice = roundPricePrecision(symbol, currentPrice);
   const priceUpdateRange = priceRange * PRICE_UPDATE_RANGE_RATIO;
 

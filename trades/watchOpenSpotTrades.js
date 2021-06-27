@@ -2,7 +2,7 @@ const { queueTransaction } = require('../transactions');
 const { getSpotTrades } = require('./spotTrades');
 const watchPrices = require('./watchPrices');
 
-function watchOpenTrades(pairs) {
+function watchOpenTrades(pairs, { priceUpdateCb } = {}) {
   const onPriceUpdate = (symbol, price) => {
     const openTrades = getSpotTrades();
     if (!openTrades[symbol]) {
@@ -14,11 +14,11 @@ function watchOpenTrades(pairs) {
     if (price < config.slSell) {
       queueTransaction('SL_SELL', config);
     }
+
+    priceUpdateCb?.(symbol, price);
   };
 
   watchPrices(pairs, onPriceUpdate);
-
-  // account updates - sell / tp sell watch
 }
 
 module.exports = watchOpenTrades;

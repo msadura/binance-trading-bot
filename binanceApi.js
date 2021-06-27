@@ -11,5 +11,6 @@ const config = {
 };
 
 const binance = new Binance().options(config);
+binance.futuresOrder();
 
 module.exports = binance;

@@ -1,6 +1,6 @@
 const binance = require('../binanceApi');
 const { logResponseError, getResponseError } = require('../errorHandler');
-const { canTradePair } = require('../utils');
+const { canTradePair, roundPricePrecision } = require('../utils');
 const { SINGLE_TRANSACTION_USD_AMOUNT } = require('../constants');
 const { roundQtyPrecision } = require('../utils');
 const { getBalance, loadBalances, hasFundsToBuy } = require('../balances');
@@ -8,7 +8,7 @@ const { getBalance, loadBalances, hasFundsToBuy } = require('../balances');
 const openTrades = {};
 const IDLE_MINUTES_TRIGGER = 60;
 
-async function loadAccountOrdersState() {
+async function loadAccountOrdersState(riskRewartRatio) {
   const res = await binance.openOrders();
 
   //map also sell orders (oco)
@@ -51,16 +51,17 @@ async function loadAccountOrdersState() {
     }
   });
 
-  Object.keys(openTrades).forEach(k => {
-    // temp shit, find better solution (pass ratio)
-    const ratio = 5;
-    const { tpSell, slStop } = openTrades[k];
-    const diff = tpSell - slStop;
-    const refPrice = slStop + diff / ratio;
-    if (refPrice) {
-      openTrades[k].refPrice = refPrice;
-    }
-  });
+  if (riskRewartRatio) {
+    Object.keys(openTrades).forEach(k => {
+      const ratio = 1 + riskRewartRatio;
+      const { tpSell, slStop, symbol } = openTrades[k];
+      const diff = tpSell - slStop;
+      const refPrice = slStop + diff / ratio;
+      if (refPrice) {
+        openTrades[k].refPrice = roundPricePrecision(symbol, refPrice);
+      }
+    });
+  }
 
   console.log('ℹ️ ', 'Loaded account orders', openTrades);
 }

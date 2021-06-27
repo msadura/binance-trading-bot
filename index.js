@@ -2,14 +2,20 @@ require('dotenv').config();
 const binance = require('./binanceApi');
 const { loadBalances } = require('./balances');
 const { loadExchangeInfo } = require('./exchangeInfo');
-const { loadAccountOrdersState } = require('./trades/spotTrades');
-// const watchAccountUpdates = require('./trades/watchAccountUpdates');
 
-// const watchFractalsStrategy = require('./watchFractals50Strategy');
-const watchFractalsStrategy = require('./watchFractals50Strategy');
+const watchFractals50Strategy = require('./watchFractals50Strategy');
+const watchFractals100Strategy = require('./watchFractalsStrategy');
 const watchEngulfingStrategy = require('./watchRsiEmaEngulfingStrategy');
 const watchEmaStochRsiAtrStrategy = require('./watchEmaStochRsiAtrStrategy');
 const watchEmaCrossMacdStrategy = require('./watchEmaCrossMacdStrategy');
+
+const strategies = {
+  fractals50: watchFractals50Strategy,
+  fractals100: watchFractals100Strategy,
+  engulfing: watchEngulfingStrategy,
+  emaStochRSI: watchEmaStochRsiAtrStrategy,
+  emaCross: watchEmaCrossMacdStrategy
+};
 
 runApp();
 
@@ -19,7 +25,6 @@ async function runApp() {
   await loadExchangeInfo();
 
   await loadBalances();
-  await loadAccountOrdersState(); //move to strategy
 
   // ---- end bootstrap phase ----
 
@@ -39,5 +44,7 @@ async function runApp() {
   // watchFractalsStrategy();
   // watchEngulfingStrategy();
   // watchEmaStochRsiAtrStrategy();
-  watchEmaCrossMacdStrategy();
+  const runStrategy = strategies.emaStochRSI;
+
+  runStrategy();
 }

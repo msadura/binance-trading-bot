@@ -17,8 +17,7 @@ function roundPricePrecision(symbol, toRound) {
 }
 
 function canTradePair(symbol) {
-  const blocked = [...BLOCKED_TRADE_COINS, 'EURUSDT', 'USDCUSDT', 'GBPUSDT', 'BUSDUSDT'];
-  return !blocked.some(coin => symbol.includes(coin));
+  return !BLOCKED_TRADE_COINS.some(coin => symbol.includes(coin));
 }
 
 function sleep(ms) {
