@@ -112,9 +112,50 @@ class Strategy {
     throw 'Required strategy method addIndicators not implemented!';
   }
 
+  checkForTradeSignal = (symbol, ohlc) => {
+    const openTrades = this.trade.openTrades;
+    const lastCandle = ohlc[ohlc.length - 1];
+
+    if (openTrades[symbol] && this.isCloseLongPositionSignal(ohlc)) {
+      console.log('🔥', 'MANUAL SELL CONDITIONS MET');
+      this.trade.closePosition(openTrades[symbol]);
+      return;
+    }
+
+    const isLong = this.isLongSignal(ohlc);
+    const isShort = this.isShortSignal(ohlc);
+    // const isLong = false;
+    // const isShort = false;
+
+    if (!openTrades[symbol] && isLong) {
+      const prices = this.getPriceLevelsForLong(symbol, {
+        priceRange: lastCandle.atr,
+        currentPrice: lastCandle.close
+      });
+
+      this.trade.openPosition({ symbol, side: 'BUY', ...prices });
+      return;
+    }
+
+    if (!openTrades[symbol] && isShort) {
+      //@TODO - futures short
+      console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${lastCandle.close}`);
+    }
+  };
+
   // eslint-disable-next-line no-unused-vars
-  checkForTradeSignal(symbol, ohlcArray) {
-    throw 'Required strategy method checkForTradeSignal not implemented!';
+  isCloseLongPositionSignal(ohlc) {
+    return false;
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  isLongSignal(ohlc) {
+    return false;
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  isShortSignal(ohlc) {
+    return false;
   }
 
   // eslint-disable-next-line no-unused-vars

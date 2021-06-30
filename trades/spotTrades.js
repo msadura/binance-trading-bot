@@ -63,7 +63,10 @@ async function loadAccountOrdersState(riskRewartRatio) {
     });
   }
 
-  console.log('ℹ️ ', 'Loaded account orders', openTrades);
+  console.log('ℹ️ ', 'Loaded account trades:');
+  Object.values(openTrades).forEach(o => {
+    console.log(JSON.stringify(o));
+  });
 }
 
 function getSpotTrades() {

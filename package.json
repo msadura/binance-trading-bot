@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node --trace-warnings index.js",
     "start-inspect": "node --inspect index.js",
-    "dev": "nodemon --inspect index.js"
+    "dev": "nodemon --inspect index.js",
+    "build": "exec zip -r ./build/trader.zip . -x .env"
   },
   "author": "",
   "license": "ISC",

@@ -32,39 +32,9 @@ class EmaStochRsiAtrStrategy extends Strategy {
     return data;
   }
 
-  checkForTradeSignal(symbol, ohlc) {
-    const openTrades = this.trade.openTrades;
-    const lastCandle = ohlc[ohlc.length - 1];
+  isLongSignal(ohlc) {
+    const candle = ohlc[ohlc.length - 1];
     const prevCandle = ohlc[ohlc.length - 2];
-
-    if (openTrades[symbol] && this.isCloseLongPositionSignal(lastCandle, symbol)) {
-      console.log('🔥', 'MANUAL SELL CONDITIONS MET');
-      this.trade.closePosition(openTrades[symbol]);
-      return;
-    }
-
-    // const isLong = this.isLongSignal(lastCandle, prevCandle);
-    const isShort = this.isShortSignal(lastCandle, prevCandle);
-    const isLong = false;
-    // const isShort = false;
-
-    if (!openTrades[symbol] && isLong) {
-      const prices = this.getPriceLevelsForLong(symbol, {
-        priceRange: lastCandle.atr,
-        currentPrice: lastCandle.close
-      });
-
-      this.trade.openPosition({ symbol, side: 'BUY', ...prices });
-      return;
-    }
-
-    if (!openTrades[symbol] && isShort) {
-      //@TODO - futures short
-      console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${lastCandle.close}`);
-    }
-  }
-
-  isLongSignal(candle, prevCandle) {
     const { ema } = candle;
 
     if (candle.close < ema[8]) {
@@ -88,7 +58,9 @@ class EmaStochRsiAtrStrategy extends Strategy {
     return true;
   }
 
-  isShortSignal(candle, prevCandle) {
+  isShortSignal(ohlc) {
+    const candle = ohlc[ohlc.length - 1];
+    const prevCandle = ohlc[ohlc.length - 2];
     const { ema } = candle;
 
     if (candle.close > ema[8]) {
@@ -112,12 +84,13 @@ class EmaStochRsiAtrStrategy extends Strategy {
     return true;
   }
 
-  isCloseLongPositionSignal(candle, symbol) {
+  isCloseLongPositionSignal(ohlc) {
+    const candle = ohlc[ohlc.length - 1];
     if (!candle.ema) {
       return false;
     }
 
-    console.log('is close', symbol, candle.price, candle.ema);
+    const { ema } = candle;
     if (ema[8] < ema[14] || ema[14] < ema[50]) {
       return true;
     }

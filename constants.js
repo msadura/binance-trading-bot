@@ -1,4 +1,4 @@
-const SINGLE_TRADE_USD_AMOUNT = Number(process.env.SINGLE_TRADE_USD_AMOUNT) || 50; //$
+const SINGLE_TRADE_USD_AMOUNT = Number(process.env.SINGLE_TRADE_USD_AMOUNT) || 51; //$
 const BLOCKED_TRADE_COINS = [
   'BNBUSDT',
   'EURUSDT',
