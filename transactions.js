@@ -7,7 +7,7 @@ const transactionQueue = {
   TRADE_ORDER: [],
   POST_TRADE_ORDER: [],
   TP_SELL: [],
-  SL_SELL: []
+  CLOSE_POSITION: []
 };
 
 function finishTransaction(symbol) {
@@ -58,8 +58,8 @@ function getNextTransaction() {
     return { type: 'POST_TRADE_ORDER', config: transactionQueue.POST_TRADE_ORDER.shift() };
   }
 
-  if (transactionQueue.SL_SELL.length) {
-    return { type: 'SL_SELL', config: transactionQueue.SL_SELL.shift() };
+  if (transactionQueue.CLOSE_POSITION.length) {
+    return { type: 'CLOSE_POSITION', config: transactionQueue.CLOSE_POSITION.shift() };
   }
 
   if (transactionQueue.TP_SELL.length) {
@@ -108,7 +108,7 @@ function getActionForType(type, config) {
       }
     }
 
-    case 'SL_SELL': {
+    case 'CLOSE_POSITION': {
       return () => closePositionMarket(config);
     }
 
@@ -130,7 +130,7 @@ function fallbackAction(type, config) {
     }
 
     case 'POST_TRADE_ORDER': {
-      queueTransaction('SL_SELL', config);
+      queueTransaction('CLOSE_POSITION', config);
       return;
     }
 

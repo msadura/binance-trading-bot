@@ -53,7 +53,7 @@ async function watchEmaCrossMacd() {
   watchCandlesticks({ callback: onCandle, period: CANDLE_PERIOD, pairs: watchPairs });
   watchAccountUpdates();
   watchOpenSpotTrades(watchPairs);
-  // watchIdle(config => queueTransaction('SL_SELL', config), 60 * 5);
+  // watchIdle(config => queueTransaction('CLOSE_POSITION', config), 60 * 5);
 }
 
 function checkForTradeSignal(symbol, ohlc) {
@@ -66,7 +66,7 @@ function checkForTradeSignal(symbol, ohlc) {
 
   if (openTrades[symbol] && isClosePositionSignal(lastCandle, prevCandle)) {
     console.log('🔥', 'MANUAL SELL CONDITIONS MET');
-    queueTransaction('SL_SELL', openTrades[symbol]);
+    queueTransaction('CLOSE_POSITION', openTrades[symbol]);
     return;
   }
 

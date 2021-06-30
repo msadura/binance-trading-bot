@@ -2,15 +2,18 @@ module.exports = {
   env: {
     node: true,
     commonjs: true,
-    es2021: true,
+    es2021: true
   },
-  extends: ["prettier", "eslint:recommended"],
-  plugins: ["prettier"],
+  extends: ['prettier', 'eslint:recommended'],
+  plugins: ['prettier', '@babel'],
+  parser: '@babel/eslint-parser',
   parserOptions: {
-    ecmaVersion: 12,
-    sourceType: "module",
+    babelOptions: {
+      configFile: './.babelrc'
+    },
+    ecmaVersion: 2018
   },
   rules: {
-    "prettier/prettier": "error",
-  },
+    'prettier/prettier': 'error'
+  }
 };

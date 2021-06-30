@@ -7,10 +7,9 @@ const { queueTransaction } = require('./transactions');
 const { roundPricePrecision } = require('./utils');
 const watchAccountUpdates = require('./trades/watchAccountUpdates');
 const watchOpenSpotTrades = require('./trades/watchOpenSpotTrades');
-const { getSpotTrades } = require('./trades/spotTrades');
+const { getSpotTrades, loadAccountOrdersState } = require('./trades/spotTrades');
 const stochasticRSI = require('./ohlc/indicators/stochasticRsi');
 const atr = require('./ohlc/indicators/atr');
-const { loadAccountOrdersState } = require('./trades/spotTrades');
 
 const STOP_LOSS_SELL_RATIO = 0.005;
 const CANDLE_PERIOD = '1h';
@@ -51,7 +50,7 @@ async function watchEmaStochRsiAtrStrategy() {
   watchCandlesticks({ callback: onCandle, period: CANDLE_PERIOD, pairs: watchPairs });
   watchAccountUpdates();
   watchOpenSpotTrades(watchPairs, { priceUpdateCb: onPriceUpdate });
-  // watchIdle(config => queueTransaction('SL_SELL', config), 60 * 5);
+  // watchIdle(config => queueTransaction('CLOSE_POSITION', config), 60 * 5);
 }
 
 function checkForTradeSignal(symbol, ohlc) {

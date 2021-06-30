@@ -63,6 +63,8 @@ function watchAccountUpdates() {
         addTradeToReport(openTrade, executedPrice, 'loss');
         updateTrade(symbol, null);
       }
+    } else {
+      // TODO - load account open trades to refresh list
     }
   }
 

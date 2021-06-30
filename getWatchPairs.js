@@ -3,7 +3,15 @@ const { MANUAL_WATCH_PAIRS } = require('./constants');
 const { getFilters } = require('./exchangeInfo');
 const { canTradePair } = require('./utils');
 
-async function getWatchPairs({ withLeverages, highVolume } = {}) {
+const DEFAULT_CONFIG = { withLeverages: false, bestVolumeCount: 50 };
+
+async function getWatchPairs(config) {
+  if (!config) {
+    console.warn('Get watch pairs config not passed, using default one.');
+  }
+  const configObj = config || DEFAULT_CONFIG;
+  const { withLeverages, bestVolumeCount } = configObj;
+
   if (MANUAL_WATCH_PAIRS.length) {
     return MANUAL_WATCH_PAIRS;
   }
@@ -16,8 +24,8 @@ async function getWatchPairs({ withLeverages, highVolume } = {}) {
     USDTPairs = filterUp(USDTPairs);
   }
 
-  if (highVolume) {
-    USDTPairs = await filterHighVolume(USDTPairs);
+  if (bestVolumeCount) {
+    USDTPairs = await filterHighVolume(USDTPairs, bestVolumeCount);
   }
 
   const USDTPairsFiltered = USDTPairs.filter(p => canTradePair(p));
@@ -33,7 +41,7 @@ function filterDown(pairsArray) {
   return pairsArray.filter(p => !p.includes('DOWNUSDT'));
 }
 
-async function filterHighVolume(pairsArray) {
+async function filterHighVolume(pairsArray, bestVolumeCount) {
   const resp = await binance.prevDay(false);
   const volumesObj = {};
   resp.map(({ symbol, quoteVolume }) => (volumesObj[symbol] = Number(quoteVolume)));
@@ -44,7 +52,7 @@ async function filterHighVolume(pairsArray) {
   }));
   pairsWithVolumes.sort((a, b) => b.volume - a.volume);
   // x best coins
-  return pairsWithVolumes.slice(0, 150).map(item => item.symbol);
+  return pairsWithVolumes.slice(0, bestVolumeCount).map(item => item.symbol);
 }
 
 module.exports = getWatchPairs;

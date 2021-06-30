@@ -12,7 +12,7 @@ function watchOpenTrades(pairs, { priceUpdateCb } = {}) {
     // emergency sell if stop loss fails
     const config = openTrades[symbol];
     if (price < config.slSell) {
-      queueTransaction('SL_SELL', config);
+      queueTransaction('CLOSE_POSITION', config);
     }
 
     priceUpdateCb?.(symbol, price);

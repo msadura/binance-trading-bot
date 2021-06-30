@@ -1,5 +1,5 @@
 const { hasFundsToBuy } = require('./balances');
-const { SINGLE_TRANSACTION_USD_AMOUNT } = require('./constants');
+const { SINGLE_TRADE_USD_AMOUNT } = require('./constants');
 const getWatchPairs = require('./getWatchPairs');
 const ema = require('./ohlc/indicators/ema');
 const williamsFractals = require('./ohlc/indicators/williamsFractals');
@@ -47,7 +47,7 @@ async function watchFractalsStrategy() {
   watchCandlesticks({ callback: onCandle, period: CANDLE_PERIOD, pairs: watchPairs });
   watchAccountUpdates();
   watchOpenSpotTrades(watchPairs);
-  watchIdle(config => queueTransaction('SL_SELL', config));
+  watchIdle(config => queueTransaction('CLOSE_POSITION', config));
 }
 
 function checkForTradeSignal(symbol, ohlc) {
@@ -62,7 +62,7 @@ function checkForTradeSignal(symbol, ohlc) {
   const isLong = isLongSignal(referenceCandle);
   if (isLong) {
     const prices = getPriceLevelsForLong(symbol, referenceCandle, lastCandle);
-    if (hasFundsToBuy(SINGLE_TRANSACTION_USD_AMOUNT)) {
+    if (hasFundsToBuy(SINGLE_TRADE_USD_AMOUNT)) {
       queueTransaction('TRADE_ORDER', { symbol, ...prices });
     }
   }

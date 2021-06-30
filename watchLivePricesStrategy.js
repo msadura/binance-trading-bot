@@ -1,6 +1,6 @@
 const { hasFundsToBuy, getBalance } = require('./balances');
 const binance = require('./binanceApi');
-const { SINGLE_TRANSACTION_USD_AMOUNT } = require('./constants');
+const { SINGLE_TRADE_USD_AMOUNT } = require('./constants');
 const { getSpotTrades } = require('./trades/spotTrades');
 const { hasPendingTransaction, startTransaction, finishTransaction } = require('./transactions');
 const { logResponseError, getResponseError } = require('./errorHandler');
@@ -53,7 +53,7 @@ function watchPrices(watchTickersList) {
       return;
     }
 
-    if (price > refPrice && hasFundsToBuy(SINGLE_TRANSACTION_USD_AMOUNT)) {
+    if (price > refPrice && hasFundsToBuy(SINGLE_TRADE_USD_AMOUNT)) {
       const percentageUp = price / refPrice - 1;
       // console.info(`${symbol} - ${price}, 🟢 ${percentageUp}%`);
 
@@ -241,7 +241,7 @@ async function buy(symbol, approxPrice) {
 // }
 
 function getAmountToBuy(symbol, approxPrice) {
-  const amount = SINGLE_TRANSACTION_USD_AMOUNT / Number(approxPrice);
+  const amount = SINGLE_TRADE_USD_AMOUNT / Number(approxPrice);
   return roundQtyPrecision(symbol, amount);
 }
 

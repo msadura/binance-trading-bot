@@ -1,7 +1,7 @@
 const binance = require('../binanceApi');
 const { logResponseError, getResponseError } = require('../errorHandler');
 const { canTradePair, roundPricePrecision } = require('../utils');
-const { SINGLE_TRANSACTION_USD_AMOUNT } = require('../constants');
+const { SINGLE_TRADE_USD_AMOUNT } = require('../constants');
 const { roundQtyPrecision } = require('../utils');
 const { getBalance, loadBalances, hasFundsToBuy } = require('../balances');
 
@@ -79,14 +79,14 @@ function getTradeForSymbol(symbol) {
 }
 
 function getAmountToBuy(symbol, refPrice) {
-  const amount = SINGLE_TRANSACTION_USD_AMOUNT / Number(refPrice);
+  const amount = SINGLE_TRADE_USD_AMOUNT / Number(refPrice);
   return roundQtyPrecision(symbol, amount);
 }
 
 async function buySpot(config) {
   const { symbol, refPrice } = config;
 
-  if (!config || !hasFundsToBuy(SINGLE_TRANSACTION_USD_AMOUNT) || openTrades[symbol]) {
+  if (!config || !hasFundsToBuy(SINGLE_TRADE_USD_AMOUNT) || openTrades[symbol]) {
     return;
   }
 
@@ -144,7 +144,13 @@ async function cancelCurrentOrders(symbol) {
     try {
       await binance.cancelAll(symbol);
     } catch (e) {
-      logResponseError(e);
+      const responseError = getResponseError(e);
+      if (responseError.code === -2011) {
+        // Does not have open trades
+        return;
+      } else {
+        logResponseError(e);
+      }
     }
   }
 }

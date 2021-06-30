@@ -14,7 +14,7 @@ const config = {
 const UP_TRIGGER_LEVEL = 0.03;
 const STOP_LOSS_TRIGGER_LEVEL = 0.06;
 const STOP_LOSS_PRICE_LEVEL = 0.065;
-const SINGLE_TRANSACTION_USD_AMOUNT = 200; //$
+const SINGLE_TRADE_USD_AMOUNT = 200; //$
 const IDLE_MINUTES_TRIGGER = 30;
 
 const binance = new Binance().options(config);
@@ -117,7 +117,7 @@ function watchPrices(watchTickersList) {
 }
 
 function hasFundsToBuy() {
-  const hasFunds = Number(balances.USDT.available) >= SINGLE_TRANSACTION_USD_AMOUNT;
+  const hasFunds = Number(balances.USDT.available) >= SINGLE_TRADE_USD_AMOUNT;
   return hasFunds;
 }
 
@@ -304,7 +304,7 @@ function roundPricePrecision(symbol, toRound) {
 }
 
 function getAmountToBuy(symbol, approxPrice) {
-  const amount = SINGLE_TRANSACTION_USD_AMOUNT / Number(approxPrice);
+  const amount = SINGLE_TRADE_USD_AMOUNT / Number(approxPrice);
   return roundQtyPrecision(symbol, amount);
 }
 
