@@ -1,5 +1,4 @@
 const binance = require('./binanceApi');
-const { MANUAL_WATCH_PAIRS } = require('./constants');
 const { getFilters } = require('./exchangeInfo');
 const { canTradePair } = require('./utils');
 
@@ -10,10 +9,10 @@ async function getWatchPairs(config) {
     console.warn('Get watch pairs config not passed, using default one.');
   }
   const configObj = config || DEFAULT_CONFIG;
-  const { withLeverages, bestVolumeCount } = configObj;
+  const { withLeverages, bestVolumeCount, manulaWatchPairs } = configObj;
 
-  if (MANUAL_WATCH_PAIRS.length) {
-    return MANUAL_WATCH_PAIRS;
+  if (manulaWatchPairs?.length) {
+    return manulaWatchPairs;
   }
 
   let USDTPairs = Object.keys(getFilters()).filter(p => p.endsWith('USDT'));

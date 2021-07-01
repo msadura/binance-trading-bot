@@ -8,7 +8,7 @@
     "start": "node --trace-warnings index.js",
     "start-inspect": "node --inspect index.js",
     "dev": "nodemon --inspect index.js",
-    "build": "exec zip -r ./build/trader.zip . -x .env"
+    "build": "exec zip -r ./build/trader.zip . -x .env -x */.git/* -x '*/.DS_Store/*' -x '*/build/*'"
   },
   "author": "",
   "license": "ISC",

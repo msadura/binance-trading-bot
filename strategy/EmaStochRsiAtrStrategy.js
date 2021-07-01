@@ -12,7 +12,7 @@ class EmaStochRsiAtrStrategy extends Strategy {
     stopLossSellRatio: 0.005, // for stop-limit orders (spot)
     watchPairs: {
       bestVolumeCount: 150,
-      withLeverages: true
+      withLeverages: false
     },
     candlePeriod: '1h',
     maxIdleMinutes: 60 * 24,
@@ -32,17 +32,13 @@ class EmaStochRsiAtrStrategy extends Strategy {
     return data;
   }
 
-  isLongSignal(ohlc) {
+  isLongSignal(ohlc, symbol) {
     const candle = ohlc[ohlc.length - 1];
     const prevCandle = ohlc[ohlc.length - 2];
     const { ema } = candle;
 
     if (candle.close < ema[8]) {
       return;
-    }
-
-    if (ema[8] < ema[14] || ema[14] < ema[50]) {
-      return false;
     }
 
     //stoch rsi cross
@@ -54,21 +50,25 @@ class EmaStochRsiAtrStrategy extends Strategy {
       return false;
     }
 
+    const emaOrder = ema[8] > ema[14] && ema[14] > ema[50];
+    if (!emaOrder) {
+      return false;
+    } else {
+      console.log(`${symbol} - EMA ORDER: ${ema[8]} > ${ema[14]} > ${ema[50]}`);
+      console.log(ohlc);
+    }
+
     // all conditions met! We've got a long signal
     return true;
   }
 
-  isShortSignal(ohlc) {
+  isShortSignal(ohlc, symbol) {
     const candle = ohlc[ohlc.length - 1];
     const prevCandle = ohlc[ohlc.length - 2];
     const { ema } = candle;
 
     if (candle.close > ema[8]) {
       return;
-    }
-
-    if (ema[8] > ema[14] || ema[14] > ema[50]) {
-      return false;
     }
 
     //stoch rsi cross
@@ -80,11 +80,19 @@ class EmaStochRsiAtrStrategy extends Strategy {
       return false;
     }
 
+    const emaOrder = ema[8] < ema[14] && ema[14] < ema[50];
+    if (!emaOrder) {
+      return false;
+    } else {
+      console.log(`${symbol} - EMA ORDER: ${ema[8]} < ${ema[14]} < ${ema[50]}`);
+      console.log(ohlc);
+    }
+
     // all conditions met! We've got a long signal
     return true;
   }
 
-  isCloseLongPositionSignal(ohlc) {
+  isCloseLongPositionSignal(ohlc, symbol) {
     const candle = ohlc[ohlc.length - 1];
     if (!candle.ema) {
       return false;
@@ -93,6 +101,8 @@ class EmaStochRsiAtrStrategy extends Strategy {
     const { ema } = candle;
     if (ema[8] < ema[14] || ema[14] < ema[50]) {
       return true;
+    } else {
+      console.log(`${symbol} - EMA ORDER (exiting): ${ema[8]} > ${ema[14]} > ${ema[50]}`);
     }
 
     return false;

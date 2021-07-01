@@ -10,7 +10,8 @@ const DEFAULT_STRATEGY_CONFIG = {
   stopLossSellRatio: 0.005, // for stop-limit orders (spot)
   watchPairs: {
     bestVolumeCount: 150,
-    withLeverages: false
+    withLeverages: false,
+    manulaWatchPairs: []
   },
   candlePeriod: '1h',
   maxIdleMinutes: 60 * 24,
@@ -116,18 +117,21 @@ class Strategy {
     const openTrades = this.trade.openTrades;
     const lastCandle = ohlc[ohlc.length - 1];
 
-    if (openTrades[symbol] && this.isCloseLongPositionSignal(ohlc)) {
+    if (openTrades[symbol] && this.isCloseLongPositionSignal(ohlc, symbol)) {
+      return;
       console.log('🔥', 'MANUAL SELL CONDITIONS MET');
       this.trade.closePosition(openTrades[symbol]);
       return;
     }
 
-    const isLong = this.isLongSignal(ohlc);
-    const isShort = this.isShortSignal(ohlc);
+    const isLong = this.isLongSignal(ohlc, symbol);
+    const isShort = this.isShortSignal(ohlc, symbol);
     // const isLong = false;
     // const isShort = false;
 
     if (!openTrades[symbol] && isLong) {
+      console.log('🔥', `${symbol} - LONG SIGNAL, price: ${lastCandle.close}`);
+      return;
       const prices = this.getPriceLevelsForLong(symbol, {
         priceRange: lastCandle.atr,
         currentPrice: lastCandle.close
