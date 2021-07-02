@@ -14,6 +14,8 @@ const BLOCKED_TRADE_COINS = [
 const MANUAL_WATCH_PAIRS = [];
 
 console.log(`SINGLE_TRADE_USD_AMOUNT: ${SINGLE_TRADE_USD_AMOUNT}$`);
+console.log(`MAX_OPEN_TRADES: ${MAX_OPEN_TRADES}`);
+console.log(`ONLY_LOG_SIGNALS: ${ONLY_LOG_SIGNALS}`);
 
 module.exports = {
   BLOCKED_TRADE_COINS,

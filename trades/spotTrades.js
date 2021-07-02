@@ -97,7 +97,7 @@ async function buySpot(config) {
     !config ||
     !hasFundsToBuy(SINGLE_TRADE_USD_AMOUNT) ||
     openTrades[symbol] ||
-    getOpenTradesCount() >= MAX_OPEN_TRADES
+    (MAX_OPEN_TRADES && getOpenTradesCount() >= MAX_OPEN_TRADES)
   ) {
     return;
   }

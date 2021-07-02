@@ -19,7 +19,8 @@ class EmaStochRsiAtrStrategy extends Strategy {
     candlePeriod: '1h',
     maxIdleMinutes: 60 * 24,
     idleCheckMinutes: 60,
-    usePriceUpdate: true
+    usePriceUpdate: true,
+    traceMarketStatus: true
   };
 
   addIndicators(ohlcArray, { symbol, checkAll } = {}) {
@@ -34,7 +35,7 @@ class EmaStochRsiAtrStrategy extends Strategy {
     return data;
   }
 
-  isLongSignal(ohlc) {
+  isLongSignal(ohlc, symbol) {
     const candle = ohlc[ohlc.length - 1];
     const prevCandle = ohlc[ohlc.length - 2];
     const { ema } = candle;
@@ -61,6 +62,7 @@ class EmaStochRsiAtrStrategy extends Strategy {
       4;
 
     if (avgSRSI > RSI_OVERSOLD_VALUE) {
+      console.log('🔥', `${symbol} - LONG SIGNAL, price: ${candle.close}, NO RSI Extreme`);
       return false;
     }
 
@@ -73,7 +75,7 @@ class EmaStochRsiAtrStrategy extends Strategy {
     return true;
   }
 
-  isShortSignal(ohlc) {
+  isShortSignal(ohlc, symbol) {
     const candle = ohlc[ohlc.length - 1];
     const prevCandle = ohlc[ohlc.length - 2];
     const { ema } = candle;
@@ -91,6 +93,11 @@ class EmaStochRsiAtrStrategy extends Strategy {
       return false;
     }
 
+    const emaOrder = ema[8] < ema[14] && ema[14] < ema[50];
+    if (!emaOrder) {
+      return false;
+    }
+
     //stoch rsi under OVERSOLD area
     const avgSRSI =
       (prevCandle.stochasticRSI.k +
@@ -100,11 +107,7 @@ class EmaStochRsiAtrStrategy extends Strategy {
       4;
 
     if (avgSRSI < RSI_OVERBOUGHT_VALUE) {
-      return false;
-    }
-
-    const emaOrder = ema[8] < ema[14] && ema[14] < ema[50];
-    if (!emaOrder) {
+      console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${candle.close}, NO RSI Extr`);
       return false;
     }
 
@@ -146,7 +149,7 @@ class EmaStochRsiAtrStrategy extends Strategy {
   }
 
   getLongPriceUpdateConfig(trade, price) {
-    console.log('🔥', 'check price update', trade.symbol, price);
+    // console.log('🔥', 'check price update', trade.symbol, price);
     if (trade.refPrice >= price) {
       return null;
     }

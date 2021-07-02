@@ -12,13 +12,14 @@ const DEFAULT_STRATEGY_CONFIG = {
   watchPairs: {
     bestVolumeCount: 150,
     withLeverages: false,
-    manulaWatchPairs: [],
+    manualWatchPairs: [],
     extraWatchPairs: []
   },
   candlePeriod: '1h',
   maxIdleMinutes: 60 * 24,
   idleCheckMinutes: 60,
-  usePriceUpdate: false
+  usePriceUpdate: false,
+  traceMarketStatus: true
 };
 
 class Strategy {
@@ -29,6 +30,7 @@ class Strategy {
   config = null;
   trade = null;
   watchPairs = [];
+  tradePairs = [];
 
   async run(tradingType) {
     if (!this.config) {
@@ -41,7 +43,14 @@ class Strategy {
     const extraWatchPairs = Object.keys(this.trade.openTrades);
     let watchPairsConfig = this.config.watchPairs ? this.config.watchPairs : {};
     watchPairsConfig = { ...watchPairsConfig, extraWatchPairs };
-    this.watchPairs = await getWatchPairs(watchPairsConfig);
+
+    const { tradePairs, watchPairs } = await getWatchPairs(
+      watchPairsConfig,
+      this.config.traceMarketStatus
+    );
+
+    this.tradePairs = tradePairs;
+    this.watchPairs = watchPairs || tradePairs;
 
     await this.prepareHistoricalOhlcData();
 
@@ -52,7 +61,7 @@ class Strategy {
     });
     watchAccountUpdates();
 
-    this.trade.watchOpenTrades(this.watchPairs, {
+    this.trade.watchOpenTrades(this.tradePairs, {
       priceUpdateCb: this.config.usePriceUpdate ? this.onPriceUpdate : null
     });
 
@@ -95,6 +104,7 @@ class Strategy {
   checkForTradeSignal = (symbol, ohlc) => {
     const openTrades = this.trade.openTrades;
     const lastCandle = ohlc[ohlc.length - 1];
+    const isTradeable = this.tradePairs.indexOf(symbol) > -1;
 
     if (openTrades[symbol] && this.isCloseLongPositionSignal(ohlc, symbol)) {
       console.log('🔥', 'MANUAL SELL CONDITIONS MET');
@@ -108,7 +118,7 @@ class Strategy {
     // const isShort = false;
 
     if (!openTrades[symbol] && isLong) {
-      if (ONLY_LOG_SIGNALS) {
+      if (ONLY_LOG_SIGNALS || !isTradeable) {
         console.log('🔥', `${symbol} - LONG SIGNAL, price: ${lastCandle.close}`);
         return;
       }
@@ -123,7 +133,7 @@ class Strategy {
     }
 
     if (!openTrades[symbol] && isShort) {
-      if (ONLY_LOG_SIGNALS) {
+      if (ONLY_LOG_SIGNALS || !isTradeable) {
         console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${lastCandle.close}`);
         return;
       }
