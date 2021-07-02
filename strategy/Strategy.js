@@ -4,6 +4,7 @@ const { loadCandlesForSymbols } = require('../ohlc/loadCandles');
 const { addOhlcPair, setOhlcData } = require('../ohlc/ohlcCache');
 const watchCandlesticks = require('../ohlc/watchCandlesticks');
 const watchAccountUpdates = require('../trades/watchAccountUpdates');
+const { ONLY_LOG_SIGNALS } = require('../constants');
 
 const DEFAULT_STRATEGY_CONFIG = {
   riskRewardRatio: 1,
@@ -11,7 +12,8 @@ const DEFAULT_STRATEGY_CONFIG = {
   watchPairs: {
     bestVolumeCount: 150,
     withLeverages: false,
-    manulaWatchPairs: []
+    manulaWatchPairs: [],
+    extraWatchPairs: []
   },
   candlePeriod: '1h',
   maxIdleMinutes: 60 * 24,
@@ -36,7 +38,11 @@ class Strategy {
     this.trade = new Trade(tradingType);
 
     await this.trade.loadOpenTrades(this.config.riskRewardRatio);
-    this.watchPairs = await getWatchPairs(this.config.watchPairs);
+    const extraWatchPairs = Object.keys(this.trade.openTrades);
+    let watchPairsConfig = this.config.watchPairs ? this.config.watchPairs : {};
+    watchPairsConfig = { ...watchPairsConfig, extraWatchPairs };
+    this.watchPairs = await getWatchPairs(watchPairsConfig);
+
     await this.prepareHistoricalOhlcData();
 
     watchCandlesticks({
@@ -73,33 +79,6 @@ class Strategy {
     setOhlcData(ohlcData);
   }
 
-  getPriceUpdateConfig(symbol, price) {
-    const trade = this.trade.openTrades[symbol];
-    if (!trade) {
-      return;
-    }
-
-    if (trade.side === 'BUY') {
-      return this.getLongPriceUpdateConfig(trade, price);
-    }
-  }
-
-  getLongPriceUpdateConfig(trade, price) {
-    if (trade.refPrice >= price) {
-      return null;
-    }
-
-    const { refPrice, priceUpdateRange, symbol } = trade;
-    if (price > refPrice + priceUpdateRange) {
-      const updatedPrices = this.getPriceLevelsForLong(symbol, {
-        currentPrice: price,
-        priceRange: priceUpdateRange
-      });
-
-      return { ...trade, ...updatedPrices };
-    }
-  }
-
   onCandle = (symbol, data) => {
     let ohlc = addOhlcPair(symbol, data);
     ohlc = this.addIndicators(ohlc, { checkAll: false, symbol });
@@ -118,7 +97,6 @@ class Strategy {
     const lastCandle = ohlc[ohlc.length - 1];
 
     if (openTrades[symbol] && this.isCloseLongPositionSignal(ohlc, symbol)) {
-      return;
       console.log('🔥', 'MANUAL SELL CONDITIONS MET');
       this.trade.closePosition(openTrades[symbol]);
       return;
@@ -130,8 +108,11 @@ class Strategy {
     // const isShort = false;
 
     if (!openTrades[symbol] && isLong) {
-      console.log('🔥', `${symbol} - LONG SIGNAL, price: ${lastCandle.close}`);
-      return;
+      if (ONLY_LOG_SIGNALS) {
+        console.log('🔥', `${symbol} - LONG SIGNAL, price: ${lastCandle.close}`);
+        return;
+      }
+
       const prices = this.getPriceLevelsForLong(symbol, {
         priceRange: lastCandle.atr,
         currentPrice: lastCandle.close
@@ -142,6 +123,11 @@ class Strategy {
     }
 
     if (!openTrades[symbol] && isShort) {
+      if (ONLY_LOG_SIGNALS) {
+        console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${lastCandle.close}`);
+        return;
+      }
+
       //@TODO - futures short
       console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${lastCandle.close}`);
     }
@@ -168,8 +154,47 @@ class Strategy {
   }
 
   // eslint-disable-next-line no-unused-vars
-  onPriceUpdate(symbol, price) {
-    // Implement onPriceUpdate if you want to make updates based on existing order price update
+  onPriceUpdate = (symbol, price) => {
+    if (!this.config?.usePriceUpdate) {
+      return;
+    }
+
+    const updatePriceConfig = this.getPriceUpdateConfig(symbol, price);
+    if (updatePriceConfig) {
+      console.log('🔥', `${symbol} - SL / TP Level update`);
+      this.trade.updatePosition(updatePriceConfig);
+      return true;
+    }
+  };
+
+  getPriceUpdateConfig(symbol, price) {
+    const trade = this.trade.openTrades[symbol];
+    if (!trade) {
+      return;
+    }
+
+    if (trade.side === 'BUY') {
+      return this.getLongPriceUpdateConfig(trade, price);
+    }
+
+    //@TODO - handle short
+  }
+
+  getLongPriceUpdateConfig(trade, price) {
+    if (trade.refPrice >= price) {
+      return null;
+    }
+
+    const { refPrice, priceUpdateRange, symbol } = trade;
+    if (priceUpdateRange && price > refPrice + priceUpdateRange) {
+      const updatedPrices = this.getPriceLevelsForLong(symbol, {
+        currentPrice: price,
+        priceRange: priceUpdateRange,
+        priceUpdate: true
+      });
+
+      return { ...trade, ...updatedPrices };
+    }
   }
 }
 

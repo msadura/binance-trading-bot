@@ -8,13 +8,14 @@
     "start": "node --trace-warnings index.js",
     "start-inspect": "node --inspect index.js",
     "dev": "nodemon --inspect index.js",
-    "build": "exec zip -r ./build/trader.zip . -x .env -x */.git/* -x '*/.DS_Store/*' -x '*/build/*'"
+    "build": "zip -r ./build/trader.zip . -x .env -x '*.git*' -x '*/.DS_Store/*' -x '*build*'"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.18.0",
     "dotenv": "^8.2.0",
+    "lodash": "^4.17.21",
     "node-binance-api": "^0.12.5",
     "technicalindicators": "^3.1.0"
   },

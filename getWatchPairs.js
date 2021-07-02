@@ -1,3 +1,5 @@
+const uniq = require('lodash/uniq');
+
 const binance = require('./binanceApi');
 const { getFilters } = require('./exchangeInfo');
 const { canTradePair } = require('./utils');
@@ -9,10 +11,10 @@ async function getWatchPairs(config) {
     console.warn('Get watch pairs config not passed, using default one.');
   }
   const configObj = config || DEFAULT_CONFIG;
-  const { withLeverages, bestVolumeCount, manulaWatchPairs } = configObj;
+  const { withLeverages, bestVolumeCount, manulaWatchPairs, extraWatchPairs = [] } = configObj;
 
   if (manulaWatchPairs?.length) {
-    return manulaWatchPairs;
+    return uniq([...manulaWatchPairs, ...extraWatchPairs]);
   }
 
   let USDTPairs = Object.keys(getFilters()).filter(p => p.endsWith('USDT'));
@@ -29,7 +31,7 @@ async function getWatchPairs(config) {
 
   const USDTPairsFiltered = USDTPairs.filter(p => canTradePair(p));
 
-  return USDTPairsFiltered;
+  return uniq([...USDTPairsFiltered, ...extraWatchPairs]);
 }
 
 function filterUp(pairsArray) {

@@ -1,4 +1,6 @@
 const SINGLE_TRADE_USD_AMOUNT = Number(process.env.SINGLE_TRADE_USD_AMOUNT) || 51; //$
+const MAX_OPEN_TRADES = Number(process.env.MAX_OPEN_TRADES) || null;
+const ONLY_LOG_SIGNALS = !!Number(process.env.ONLY_LOG_SIGNALS) || false;
 const BLOCKED_TRADE_COINS = [
   'BNBUSDT',
   'EURUSDT',
@@ -6,7 +8,8 @@ const BLOCKED_TRADE_COINS = [
   'GBPUSDT',
   'BUSDUSDT',
   'TRUUSDT',
-  'TUSDUSDT'
+  'TUSDUSDT',
+  'PAXUSDT'
 ];
 const MANUAL_WATCH_PAIRS = [];
 
@@ -15,5 +18,7 @@ console.log(`SINGLE_TRADE_USD_AMOUNT: ${SINGLE_TRADE_USD_AMOUNT}$`);
 module.exports = {
   BLOCKED_TRADE_COINS,
   SINGLE_TRADE_USD_AMOUNT,
-  MANUAL_WATCH_PAIRS
+  MANUAL_WATCH_PAIRS,
+  MAX_OPEN_TRADES,
+  ONLY_LOG_SIGNALS
 };

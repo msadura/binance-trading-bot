@@ -41,6 +41,14 @@ class Trade {
     queueTransaction('TRADE_ORDER', config);
   }
 
+  updatePosition(config) {
+    if (!config.symbol) {
+      console.warn('Trying to update position without specified symbol');
+    }
+
+    queueTransaction('POST_TRADE_ORDER', config);
+  }
+
   watchIdle(maxIdleMinutes, idleCheckMinutes) {
     // Check every idleCheckMinutes mins
     setInterval(() => this.sellIdle(maxIdleMinutes), 1000 * 60 * idleCheckMinutes);

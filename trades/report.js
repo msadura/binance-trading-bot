@@ -7,10 +7,10 @@ const tradesReport = {
 };
 
 function addTradeToReport(config, executedPrice, type) {
-  const { symbol, refPrice } = config;
+  const { symbol, openPrice } = config;
   tradesReport.all++;
 
-  const priceDiff = refPrice ? Number(executedPrice) - refPrice : null;
+  const priceDiff = openPrice ? Number(executedPrice) - openPrice : null;
   let balanceDiff = priceDiff ? priceDiff * config.quantity : null;
 
   if (balanceDiff) {
@@ -24,7 +24,7 @@ function addTradeToReport(config, executedPrice, type) {
 
       console.log(
         '💰 🟢',
-        `${symbol} TP HIT! buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
+        `${symbol} TP HIT! buy: ${openPrice || '-'}, sell: ${executedPrice}, diff: ${
           balanceDiff || '-'
         }`
       );
@@ -35,7 +35,7 @@ function addTradeToReport(config, executedPrice, type) {
 
       console.log(
         '💥 🔴',
-        `${symbol} SL HIT :( buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
+        `${symbol} SL HIT :( buy: ${openPrice || '-'}, sell: ${executedPrice}, diff: ${
           balanceDiff || '-'
         }`
       );
@@ -46,7 +46,7 @@ function addTradeToReport(config, executedPrice, type) {
 
       console.log(
         '💥 🟡',
-        `${symbol} MANUAL SELL - buy: ${refPrice || '-'}, sell: ${executedPrice}, diff: ${
+        `${symbol} MANUAL SELL - buy: ${openPrice || '-'}, sell: ${executedPrice}, diff: ${
           balanceDiff || '-'
         }`
       );

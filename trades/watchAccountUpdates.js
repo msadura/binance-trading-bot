@@ -42,7 +42,7 @@ function watchAccountUpdates() {
     if (openTrade) {
       //update market purchase price
       if (side === 'BUY' && executionType === 'TRADE' && orderType === 'MARKET') {
-        const updatedTrade = { ...openTrade, refPrice: executedPrice };
+        const updatedTrade = { ...openTrade, openPrice: executedPrice };
         updateTrade(symbol, updatedTrade);
       }
 
