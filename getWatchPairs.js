@@ -7,7 +7,7 @@ const { canTradePair } = require('./utils');
 const DEFAULT_CONFIG = { withLeverages: false, bestVolumeCount: 50 };
 const MARKET_STATUS_PAIRS_COUNT = 200;
 
-let pairsWithVolumes = null;
+let pairsWithVolumes = [];
 
 async function getWatchPairs(config, traceMarketStatus) {
   if (!config) {
@@ -52,20 +52,23 @@ function filterDown(pairsArray) {
 }
 
 async function filterHighVolume(pairsArray, bestVolumeCount) {
-  if (!pairsWithVolumes) {
+  if (!pairsWithVolumes?.length) {
     const resp = await binance.prevDay(false);
-    const volumesObj = {};
-    resp.map(({ symbol, quoteVolume }) => (volumesObj[symbol] = Number(quoteVolume)));
 
-    pairsWithVolumes = pairsArray.map(symbol => ({
-      symbol,
-      volume: volumesObj[symbol] || 0
-    }));
+    resp.forEach(({ symbol, quoteVolume }) => {
+      // volumesObj[symbol] = Number(quoteVolume))
+      pairsWithVolumes.push({
+        symbol,
+        volume: quoteVolume || 0
+      });
+    });
+
     pairsWithVolumes.sort((a, b) => b.volume - a.volume);
   }
 
+  const allowedPairs = pairsWithVolumes.filter(p => pairsArray.includes(p.symbol));
   // x best coins
-  return pairsWithVolumes.slice(0, bestVolumeCount).map(item => item.symbol);
+  return allowedPairs.slice(0, bestVolumeCount).map(item => item.symbol);
 }
 
 module.exports = getWatchPairs;
