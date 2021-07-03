@@ -50,7 +50,7 @@ class Strategy {
 
     this.tradePairs = tradePairs;
     this.watchPairs = watchPairs || tradePairs;
-    console.log('🔥', `TRADE PAIRS: ${JSON.stringify(tradePairs)}`);
+    console.log('🔥', `${tradePairs.length} TRADE PAIRS: ${JSON.stringify(tradePairs)}`);
 
     await this.prepareHistoricalOhlcData();
 
