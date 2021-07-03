@@ -1,6 +1,7 @@
 require('dotenv').config();
 const binance = require('./binanceApi');
 const { loadBalances } = require('./balances');
+const { loadSymbolPrice } = require('./prices');
 const { loadExchangeInfo } = require('./exchangeInfo');
 
 // refactor strategies
@@ -41,6 +42,7 @@ async function runApp() {
   // liquidateStopLoss('SRMBUSD');
   // console.log('🔥', roundPricePrecision('MATICUSDT', '8.12349080809098'));
   // watchAccountUpdates();
+  loadSymbolPrice('BNBUSDT');
 
   // ---- use selected trade strategy ----
   // watchFractalsStrategy();

@@ -4,7 +4,6 @@ const { loadCandlesForSymbols } = require('../ohlc/loadCandles');
 const { addOhlcPair, setOhlcData } = require('../ohlc/ohlcCache');
 const watchCandlesticks = require('../ohlc/watchCandlesticks');
 const watchAccountUpdates = require('../trades/watchAccountUpdates');
-const { ONLY_LOG_SIGNALS } = require('../constants');
 
 const DEFAULT_STRATEGY_CONFIG = {
   riskRewardRatio: 1,
@@ -106,9 +105,17 @@ class Strategy {
     const lastCandle = ohlc[ohlc.length - 1];
     const isTradeable = this.tradePairs.indexOf(symbol) > -1;
 
-    if (openTrades[symbol] && this.isCloseLongPositionSignal(ohlc, symbol)) {
-      console.log('🔥', 'MANUAL SELL CONDITIONS MET');
-      this.trade.closePosition(openTrades[symbol]);
+    if (openTrades[symbol]) {
+      const shouldCloseLong =
+        openTrades[symbol].side === 'BUY' && this.isCloseLongPositionSignal(ohlc, symbol);
+
+      const shouldCloseShort =
+        openTrades[symbol].side === 'SELL' && this.isCloseShortPositionSignal(ohlc, symbol);
+
+      if (shouldCloseLong || shouldCloseShort) {
+        this.trade.closePosition(openTrades[symbol]);
+      }
+
       return;
     }
 
@@ -118,50 +125,32 @@ class Strategy {
     // const isShort = false;
 
     if (!openTrades[symbol] && isLong) {
-      if (ONLY_LOG_SIGNALS || !isTradeable) {
-        console.log('🔥', `${symbol} - LONG SIGNAL, price: ${lastCandle.close}`);
-        return;
-      }
-
       const prices = this.getPriceLevelsForLong(symbol, {
         priceRange: lastCandle.atr,
         currentPrice: lastCandle.close
       });
+
+      if (!isTradeable) {
+        return;
+      }
 
       this.trade.openPosition({ symbol, side: 'BUY', ...prices });
       return;
     }
 
     if (!openTrades[symbol] && isShort) {
-      if (ONLY_LOG_SIGNALS || !isTradeable) {
-        console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${lastCandle.close}`);
+      const prices = this.getPriceLevelsForShort(symbol, {
+        priceRange: lastCandle.atr,
+        currentPrice: lastCandle.close
+      });
+
+      if (!isTradeable) {
         return;
       }
 
-      //@TODO - futures short
-      console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${lastCandle.close}`);
+      this.trade.openPosition({ symbol, side: 'SELL', ...prices });
     }
   };
-
-  // eslint-disable-next-line no-unused-vars
-  isCloseLongPositionSignal(ohlc) {
-    return false;
-  }
-
-  // eslint-disable-next-line no-unused-vars
-  isLongSignal(ohlc) {
-    return false;
-  }
-
-  // eslint-disable-next-line no-unused-vars
-  isShortSignal(ohlc) {
-    return false;
-  }
-
-  // eslint-disable-next-line no-unused-vars
-  getPriceLevelsForLong(symbol, { currentPrice, priceRange }) {
-    throw 'Required strategy method getPriceLevelsForLong not implemented!';
-  }
 
   // eslint-disable-next-line no-unused-vars
   onPriceUpdate = (symbol, price) => {
@@ -205,6 +194,36 @@ class Strategy {
 
       return { ...trade, ...updatedPrices };
     }
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  isCloseLongPositionSignal(ohlc, symbol) {
+    return false;
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  isCloseShortPositionSignal(ohlc, symbol) {
+    return false;
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  isLongSignal(ohlc) {
+    return false;
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  isShortSignal(ohlc) {
+    return false;
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  getPriceLevelsForLong(symbol, { currentPrice, priceRange }) {
+    throw 'Required strategy method getPriceLevelsForLong not implemented!';
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  getPriceLevelsForShort(symbol, { currentPrice, priceRange }) {
+    throw 'Required strategy method getPriceLevelsForShort not implemented!';
   }
 }
 

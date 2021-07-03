@@ -109,11 +109,9 @@ async function buySpot(config) {
 
   console.log('💰', `${symbol} - Purchasing... - qty: ${quantity} price: ${refPrice}`);
 
-  if (!config.testTrade) {
-    const resp = await binance.marketBuy(symbol, quantity);
-    postTradeOrderConfig.quantity = resp.executedQty;
-    console.log('💰', `${symbol} - Purchased - qty: ${resp.executedQty} price: ${refPrice}`);
-  }
+  const resp = await binance.marketBuy(symbol, quantity);
+  postTradeOrderConfig.quantity = resp.executedQty;
+  console.log('💰', `${symbol} - Purchased - qty: ${resp.executedQty} price: ${refPrice}`);
 
   await loadBalances();
   openTrades[symbol] = postTradeOrderConfig;

@@ -48,7 +48,7 @@ function watchAccountUpdates() {
 
       //update market purchase price
       if (side === 'SELL' && executionType === 'TRADE' && orderType === 'MARKET') {
-        addTradeToReport(openTrade, executedPrice, 'idle');
+        addTradeToReport(openTrade, executedPrice, 'manual');
         updateTrade(symbol, null);
       }
 

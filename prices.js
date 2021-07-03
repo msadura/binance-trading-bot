@@ -10,4 +10,9 @@ function getPrices() {
   return prices;
 }
 
-module.exports = { loadPrices, getPrices };
+async function loadSymbolPrice(symbol) {
+  const res = await binance.prices(symbol);
+  return Number(res[symbol]);
+}
+
+module.exports = { loadPrices, getPrices, loadSymbolPrice };

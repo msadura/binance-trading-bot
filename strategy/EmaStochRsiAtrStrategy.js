@@ -16,10 +16,10 @@ class EmaStochRsiAtrStrategy extends Strategy {
       bestVolumeCount: 150,
       withLeverages: false
     },
-    candlePeriod: '1h',
+    candlePeriod: '5m',
     maxIdleMinutes: 60 * 24,
     idleCheckMinutes: 60,
-    usePriceUpdate: true,
+    usePriceUpdate: false,
     traceMarketStatus: true
   };
 
@@ -54,17 +54,17 @@ class EmaStochRsiAtrStrategy extends Strategy {
     }
 
     //stoch rsi under OVERSOLD area
-    const avgSRSI =
-      (prevCandle.stochasticRSI.k +
-        prevCandle.stochasticRSI.d +
-        candle.stochasticRSI.k +
-        candle.stochasticRSI.d) /
-      4;
+    // const avgSRSI =
+    //   (prevCandle.stochasticRSI.k +
+    //     prevCandle.stochasticRSI.d +
+    //     candle.stochasticRSI.k +
+    //     candle.stochasticRSI.d) /
+    //   4;
 
-    if (avgSRSI > RSI_OVERSOLD_VALUE) {
-      console.log('🔥', `${symbol} - LONG SIGNAL, price: ${candle.close}, NO RSI Extreme`);
-      return false;
-    }
+    // if (avgSRSI > RSI_OVERSOLD_VALUE) {
+    //   console.log('🔥', `${symbol} - LONG SIGNAL, price: ${candle.close}, NO RSI Extreme`);
+    //   return false;
+    // }
 
     const emaOrder = ema[8] > ema[14] && ema[14] > ema[50];
     if (!emaOrder) {
@@ -99,17 +99,17 @@ class EmaStochRsiAtrStrategy extends Strategy {
     }
 
     //stoch rsi under OVERSOLD area
-    const avgSRSI =
-      (prevCandle.stochasticRSI.k +
-        prevCandle.stochasticRSI.d +
-        candle.stochasticRSI.k +
-        candle.stochasticRSI.d) /
-      4;
+    // const avgSRSI =
+    //   (prevCandle.stochasticRSI.k +
+    //     prevCandle.stochasticRSI.d +
+    //     candle.stochasticRSI.k +
+    //     candle.stochasticRSI.d) /
+    //   4;
 
-    if (avgSRSI < RSI_OVERBOUGHT_VALUE) {
-      console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${candle.close}, NO RSI Extr`);
-      return false;
-    }
+    // if (avgSRSI < RSI_OVERBOUGHT_VALUE) {
+    //   console.log('🔥', `${symbol} - SHORT SIGNAL, price: ${candle.close}, NO RSI Extr`);
+    //   return false;
+    // }
 
     // all conditions met! We've got a long signal
     return true;
@@ -129,6 +129,20 @@ class EmaStochRsiAtrStrategy extends Strategy {
     return false;
   }
 
+  isCloseShortPositionSignal(ohlc) {
+    const candle = ohlc[ohlc.length - 1];
+    if (!candle.ema) {
+      return false;
+    }
+
+    const { ema } = candle;
+    if (ema[8] > ema[14] || ema[14] > ema[50]) {
+      return true;
+    }
+
+    return false;
+  }
+
   getPriceLevelsForLong(symbol, { currentPrice, priceRange, priceUpdate = false }) {
     const slRange = priceRange * 3;
     const slStop = roundPricePrecision(symbol, currentPrice - slRange);
@@ -136,6 +150,25 @@ class EmaStochRsiAtrStrategy extends Strategy {
     const tpSell = roundPricePrecision(
       symbol,
       currentPrice + slRange * this.config.riskRewardRatio
+    );
+    const refPrice = roundPricePrecision(symbol, currentPrice);
+    const priceUpdateRange = priceRange * PRICE_UPDATE_RANGE_RATIO;
+
+    const prices = { slStop, slSell, tpSell, refPrice, priceUpdateRange };
+    if (!priceUpdate) {
+      prices.openPrice = refPrice;
+    }
+
+    return prices;
+  }
+
+  getPriceLevelsForShort(symbol, { currentPrice, priceRange, priceUpdate = false }) {
+    const slRange = priceRange * 3;
+    const slStop = roundPricePrecision(symbol, currentPrice + slRange);
+    const slSell = roundPricePrecision(symbol, slStop + slStop * this.config.stopLossSellRatio);
+    const tpSell = roundPricePrecision(
+      symbol,
+      currentPrice - slRange * this.config.riskRewardRatio
     );
     const refPrice = roundPricePrecision(symbol, currentPrice);
     const priceUpdateRange = priceRange * PRICE_UPDATE_RANGE_RATIO;

@@ -2,9 +2,11 @@ const { queueTransaction } = require('../transactions');
 
 const { getSpotTrades, loadAccountOrdersState } = require('./spotTrades');
 const watchOpenSpotTrades = require('./watchOpenSpotTrades');
+const { VIRTUAL_TRADES } = require('../constants');
+const virtualTrades = require('./virtualTrades');
 
 class Trade {
-  // SPOT | FUTURES | MARGIN
+  // SPOT | FUTURES | MARGIN | VIRTUAL
   constructor(tradingType = 'SPOT') {
     if (!tradingType) {
       throw 'Specify trading type: SPOT | FUTURES';
@@ -30,6 +32,11 @@ class Trade {
       console.warn('Trying to close position without specified symbol');
     }
 
+    if (VIRTUAL_TRADES) {
+      virtualTrades.closePosition(config, 'MANUAL_SELL');
+      return;
+    }
+
     queueTransaction('CLOSE_POSITION', config);
   }
 
@@ -38,12 +45,22 @@ class Trade {
       console.warn('Trying to open position without specified symbol');
     }
 
+    if (VIRTUAL_TRADES) {
+      virtualTrades.openPosition(config);
+      return;
+    }
+
     queueTransaction('TRADE_ORDER', config);
   }
 
   updatePosition(config) {
     if (!config.symbol) {
       console.warn('Trying to update position without specified symbol');
+    }
+
+    if (VIRTUAL_TRADES) {
+      virtualTrades.updatePosition(config);
+      return;
     }
 
     queueTransaction('POST_TRADE_ORDER', config);
@@ -59,6 +76,10 @@ class Trade {
 
     if (this.tradingType === 'FUTURES') {
       // @TODO: futures load etc.
+    }
+
+    if (VIRTUAL_TRADES) {
+      watchAction = virtualTrades.watchOpenPositions;
     }
 
     watchAction(watchPairs, config);
@@ -87,6 +108,10 @@ class Trade {
 
     if (this.tradingType === 'FUTURES') {
       // @TODO: futures
+    }
+
+    if (VIRTUAL_TRADES) {
+      getTradesAction = virtualTrades.getOpenPositions;
     }
 
     return getTradesAction();

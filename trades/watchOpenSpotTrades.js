@@ -9,6 +9,8 @@ function watchOpenTrades(pairs, { priceUpdateCb } = {}) {
       return;
     }
 
+    //VIRTUAL_TRADES -> watch for trade tp / sl / update
+
     // emergency sell if stop loss fails
     const config = openTrades[symbol];
     if (price < config.slSell) {
