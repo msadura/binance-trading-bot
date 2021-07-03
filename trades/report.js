@@ -26,8 +26,8 @@ function addTradeToReport(config, executedPrice, type) {
   }
 
   const tradeType = {
-    sell: 'SHORT',
-    buy: 'LONG'
+    SELL: 'SHORT',
+    BUY: 'LONG'
   };
 
   switch (type) {

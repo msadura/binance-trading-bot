@@ -35,7 +35,7 @@ class EmaStochRsiAtrStrategy extends Strategy {
     return data;
   }
 
-  isLongSignal(ohlc, symbol) {
+  isLongSignal(ohlc) {
     const candle = ohlc[ohlc.length - 1];
     const prevCandle = ohlc[ohlc.length - 2];
     const { ema } = candle;
@@ -75,7 +75,7 @@ class EmaStochRsiAtrStrategy extends Strategy {
     return true;
   }
 
-  isShortSignal(ohlc, symbol) {
+  isShortSignal(ohlc) {
     const candle = ohlc[ohlc.length - 1];
     const prevCandle = ohlc[ohlc.length - 2];
     const { ema } = candle;

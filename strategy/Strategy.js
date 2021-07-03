@@ -50,6 +50,7 @@ class Strategy {
 
     this.tradePairs = tradePairs;
     this.watchPairs = watchPairs || tradePairs;
+    console.log('🔥', `TRADE PAIRS: ${JSON.stringify(tradePairs)}`);
 
     await this.prepareHistoricalOhlcData();
 
@@ -103,7 +104,7 @@ class Strategy {
   checkForTradeSignal = (symbol, ohlc) => {
     const openTrades = this.trade.openTrades;
     const lastCandle = ohlc[ohlc.length - 1];
-    const isTradeable = this.tradePairs.indexOf(symbol) > -1;
+    const isTradeable = this.tradePairs.includes(symbol);
 
     if (openTrades[symbol]) {
       const shouldCloseLong =
