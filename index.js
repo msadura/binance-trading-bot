@@ -5,19 +5,17 @@ const { loadSymbolPrice } = require('./prices');
 const { loadExchangeInfo } = require('./exchangeInfo');
 
 // refactor strategies
-const watchFractals50Strategy = require('./watchFractals50Strategy');
-const watchFractals100Strategy = require('./watchFractalsStrategy');
-const watchEngulfingStrategy = require('./watchRsiEmaEngulfingStrategy');
-const watchEmaCrossMacdStrategy = require('./watchEmaCrossMacdStrategy');
+// const watchFractals50Strategy = require('./watchFractals50Strategy');
+// const watchFractals100Strategy = require('./watchFractalsStrategy');
+// const watchEngulfingStrategy = require('./watchRsiEmaEngulfingStrategy');
+// const watchEmaCrossMacdStrategy = require('./watchEmaCrossMacdStrategy');
 // refactored
 const EmaStochRsiAtrStrategy = require('./strategy/EmaStochRsiAtrStrategy');
+const EmaCross1030 = require('./strategy/EmaCross1030');
 
 const strategies = {
-  fractals50: watchFractals50Strategy,
-  fractals100: watchFractals100Strategy,
-  engulfing: watchEngulfingStrategy,
   emaStochRSI: EmaStochRsiAtrStrategy,
-  emaCross: watchEmaCrossMacdStrategy
+  emaCross1030: EmaCross1030
 };
 
 runApp();
@@ -48,6 +46,6 @@ async function runApp() {
   // watchFractalsStrategy();
   // watchEngulfingStrategy();
   // watchEmaStochRsiAtrStrategy();
-  const Strategy = new strategies.emaStochRSI();
+  const Strategy = new strategies.emaCross1030();
   Strategy.run();
 }
