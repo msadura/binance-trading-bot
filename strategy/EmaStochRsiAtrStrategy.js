@@ -5,8 +5,8 @@ const stochasticRSI = require('../ohlc/indicators/stochasticRsi');
 const atr = require('../ohlc/indicators/atr');
 
 const PRICE_UPDATE_RANGE_RATIO = 1; // 0,5 * atr
-const RSI_OVERBOUGHT_VALUE = 80;
-const RSI_OVERSOLD_VALUE = 20;
+// const RSI_OVERBOUGHT_VALUE = 80;
+// const RSI_OVERSOLD_VALUE = 20;
 
 class EmaStochRsiAtrStrategy extends Strategy {
   config = {

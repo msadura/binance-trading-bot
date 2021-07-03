@@ -3,6 +3,7 @@ const { roundPricePrecision } = require('../utils');
 const ema = require('../ohlc/indicators/ema');
 const atr = require('../ohlc/indicators/atr');
 const macd = require('../ohlc/indicators/macd');
+const { CANDLE_PERIOD } = require('../constants');
 
 class EmaCross1030 extends Strategy {
   config = {
@@ -12,7 +13,7 @@ class EmaCross1030 extends Strategy {
       bestVolumeCount: 150,
       withLeverages: false
     },
-    candlePeriod: '30m',
+    candlePeriod: CANDLE_PERIOD || '1h',
     maxIdleMinutes: 60 * 24,
     idleCheckMinutes: 60,
     usePriceUpdate: false,

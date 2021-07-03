@@ -1,6 +1,7 @@
 const SINGLE_TRADE_USD_AMOUNT = Number(process.env.SINGLE_TRADE_USD_AMOUNT) || 51; //$
 const MAX_OPEN_TRADES = Number(process.env.MAX_OPEN_TRADES) || null;
 const VIRTUAL_TRADES = !!Number(process.env.VIRTUAL_TRADES) || false;
+const CANDLE_PERIOD = process.env.CANDLE_PERIOD || '1h';
 const BLOCKED_TRADE_COINS = [
   'BNBUSDT',
   'EURUSDT',
