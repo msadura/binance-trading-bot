@@ -206,7 +206,7 @@ class Strategy {
       return;
     }
 
-    setInterval(() => openPositionsReport(this.trade.openTrades), 1000 * 60 * 30);
+    setInterval(() => openPositionsReport(this.trade.openTrades), 1000 * 60 * 15);
   }
 
   // eslint-disable-next-line no-unused-vars
