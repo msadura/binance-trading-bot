@@ -13,7 +13,7 @@ class EmaCross1030 extends Strategy {
       bestVolumeCount: 150,
       withLeverages: false
     },
-    candlePeriod: CANDLE_PERIOD || '1m',
+    candlePeriod: CANDLE_PERIOD || '5m',
     maxIdleMinutes: 60 * 24,
     idleCheckMinutes: 60,
     usePriceUpdate: false,
@@ -82,9 +82,9 @@ class EmaCross1030 extends Strategy {
       return false;
     }
 
-    // if (candle.ema[10] < candle.ema[30]) {
-    //   return true;
-    // }
+    if (candle.ema[10] < candle.ema[30]) {
+      return true;
+    }
 
     return false;
   }
@@ -95,9 +95,9 @@ class EmaCross1030 extends Strategy {
       return false;
     }
 
-    // if (candle.ema[10] > candle.ema[30]) {
-    //   return true;
-    // }
+    if (candle.ema[10] > candle.ema[30]) {
+      return true;
+    }
 
     return false;
   }

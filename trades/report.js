@@ -5,7 +5,7 @@ const tradesReport = {
   w: 0,
   l: 0,
   i: 0,
-  diff: 0
+  pnl: 0
 };
 
 function addTradeToReport(config, executedPrice, type) {
@@ -15,7 +15,7 @@ function addTradeToReport(config, executedPrice, type) {
   const pnl = getPNL(config, executedPrice);
 
   if (pnl) {
-    tradesReport.diff = Number((tradesReport.diff + pnl).toFixed(3));
+    tradesReport.pnl = Number((tradesReport.pnl + pnl).toFixed(3));
   }
 
   const tradeType = {
@@ -31,7 +31,7 @@ function addTradeToReport(config, executedPrice, type) {
         '💰 🟢',
         `${symbol} TP HIT! ${tradeType[side]} buy: ${
           openPrice || '-'
-        }, sell: ${executedPrice}, diff: ${pnl || '-'}`
+        }, sell: ${executedPrice}, pnl: ${pnl || '-'}`
       );
       break;
     }
@@ -42,7 +42,7 @@ function addTradeToReport(config, executedPrice, type) {
         '💥 🔴',
         `${symbol} SL HIT :( ${tradeType[side]} buy: ${
           openPrice || '-'
-        }, sell: ${executedPrice}, diff: ${pnl || '-'}`
+        }, sell: ${executedPrice}, pnl: ${pnl || '-'}`
       );
       break;
     }
@@ -51,7 +51,7 @@ function addTradeToReport(config, executedPrice, type) {
 
       console.log(
         '💥 🟡',
-        `${symbol} MANUAL SELL - buy: ${openPrice || '-'}, sell: ${executedPrice}, diff: ${
+        `${symbol} MANUAL SELL - buy: ${openPrice || '-'}, sell: ${executedPrice}, pnl: ${
           pnl || '-'
         }`
       );
