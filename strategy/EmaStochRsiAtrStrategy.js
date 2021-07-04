@@ -3,6 +3,7 @@ const { roundPricePrecision } = require('../utils');
 const ema = require('../ohlc/indicators/ema');
 const stochasticRSI = require('../ohlc/indicators/stochasticRsi');
 const atr = require('../ohlc/indicators/atr');
+const { CANDLE_PERIOD } = require('../constants');
 
 const PRICE_UPDATE_RANGE_RATIO = 1; // 0,5 * atr
 // const RSI_OVERBOUGHT_VALUE = 80;
@@ -16,7 +17,7 @@ class EmaStochRsiAtrStrategy extends Strategy {
       bestVolumeCount: 150,
       withLeverages: false
     },
-    candlePeriod: '5m',
+    candlePeriod: CANDLE_PERIOD || '1h',
     maxIdleMinutes: 60 * 24,
     idleCheckMinutes: 60,
     usePriceUpdate: false,

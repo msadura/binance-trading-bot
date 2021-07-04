@@ -7,13 +7,13 @@ const { CANDLE_PERIOD } = require('../constants');
 
 class EmaCross1030 extends Strategy {
   config = {
-    riskRewardRatio: 2,
+    riskRewardRatio: 3,
     stopLossSellRatio: 0.005, // for stop-limit orders (spot)
     watchPairs: {
       bestVolumeCount: 150,
       withLeverages: false
     },
-    candlePeriod: CANDLE_PERIOD || '1h',
+    candlePeriod: CANDLE_PERIOD || '1m',
     maxIdleMinutes: 60 * 24,
     idleCheckMinutes: 60,
     usePriceUpdate: false,
