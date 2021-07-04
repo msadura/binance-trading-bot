@@ -1,3 +1,5 @@
+const { loadSymbolPrice } = require('../prices');
+
 const tradesReport = {
   all: 0,
   w: 0,
@@ -10,19 +12,10 @@ function addTradeToReport(config, executedPrice, type) {
   const { symbol, openPrice, side } = config;
   tradesReport.all++;
 
-  let priceDiff = null;
-  if (side === 'BUY') {
-    priceDiff = openPrice ? Number(executedPrice) - openPrice : null;
-  }
+  const pnl = getPNL(config, executedPrice);
 
-  if (side === 'SELL') {
-    priceDiff = openPrice ? openPrice - Number(executedPrice) : null;
-  }
-  let balanceDiff = priceDiff ? priceDiff * config.quantity : null;
-
-  if (balanceDiff) {
-    balanceDiff = Number(balanceDiff.toFixed(2));
-    tradesReport.diff = tradesReport.diff + balanceDiff;
+  if (pnl) {
+    tradesReport.diff = Number((tradesReport.diff + pnl).toFixed(3));
   }
 
   const tradeType = {
@@ -38,7 +31,7 @@ function addTradeToReport(config, executedPrice, type) {
         '💰 🟢',
         `${symbol} TP HIT! ${tradeType[side]} buy: ${
           openPrice || '-'
-        }, sell: ${executedPrice}, diff: ${balanceDiff || '-'}`
+        }, sell: ${executedPrice}, diff: ${pnl || '-'}`
       );
       break;
     }
@@ -49,7 +42,7 @@ function addTradeToReport(config, executedPrice, type) {
         '💥 🔴',
         `${symbol} SL HIT :( ${tradeType[side]} buy: ${
           openPrice || '-'
-        }, sell: ${executedPrice}, diff: ${balanceDiff || '-'}`
+        }, sell: ${executedPrice}, diff: ${pnl || '-'}`
       );
       break;
     }
@@ -59,7 +52,7 @@ function addTradeToReport(config, executedPrice, type) {
       console.log(
         '💥 🟡',
         `${symbol} MANUAL SELL - buy: ${openPrice || '-'}, sell: ${executedPrice}, diff: ${
-          balanceDiff || '-'
+          pnl || '-'
         }`
       );
       break;
@@ -71,7 +64,41 @@ function addTradeToReport(config, executedPrice, type) {
   // send stats to db, send email etc
 }
 
+async function openPositionsReport(openPositions = {}) {
+  const positionsArr = Object.values(openPositions);
+  const report = {};
+  let totalPnl = 0;
+
+  for (const positionConfig of positionsArr) {
+    const price = await loadSymbolPrice(positionConfig.symbol);
+    const pnl = getPNL(positionConfig, price);
+    report[positionConfig.symbol] = pnl;
+    totalPnl = totalPnl + pnl;
+  }
+
+  console.log(`🔥 Open pos. ${positionsArr.length} pnl: ${totalPnl}$`);
+  console.log(`🔥 ${JSON.stringify(report)}`);
+}
+
+function getPNL(config, price) {
+  const { openPrice, side } = config;
+
+  let priceDiff = null;
+  if (side === 'BUY') {
+    priceDiff = openPrice ? Number(price) - openPrice : null;
+  }
+
+  if (side === 'SELL') {
+    priceDiff = openPrice ? openPrice - Number(price) : null;
+  }
+
+  if (priceDiff) {
+    return Number((priceDiff * config.quantity).toFixed(3));
+  }
+}
+
 module.exports = {
   addTradeToReport,
-  tradesReport
+  tradesReport,
+  openPositionsReport
 };

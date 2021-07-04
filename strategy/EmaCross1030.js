@@ -7,7 +7,7 @@ const { CANDLE_PERIOD } = require('../constants');
 
 class EmaCross1030 extends Strategy {
   config = {
-    riskRewardRatio: 3,
+    riskRewardRatio: 2,
     stopLossSellRatio: 0.005, // for stop-limit orders (spot)
     watchPairs: {
       bestVolumeCount: 150,
@@ -17,7 +17,8 @@ class EmaCross1030 extends Strategy {
     maxIdleMinutes: 60 * 24,
     idleCheckMinutes: 60,
     usePriceUpdate: false,
-    traceMarketStatus: true
+    traceMarketStatus: true,
+    logOpenPositionsReport: true
   };
 
   addIndicators(ohlcArray, { symbol, checkAll } = {}) {
@@ -122,7 +123,7 @@ class EmaCross1030 extends Strategy {
 
   // price range = atr
   getPriceLevelsForShort(symbol, { currentPrice, priceRange, priceUpdate = false }) {
-    const slRange = priceRange * 1;
+    const slRange = priceRange * 2;
     const slStop = roundPricePrecision(symbol, currentPrice + slRange);
     const slSell = roundPricePrecision(symbol, slStop + slStop * this.config.stopLossSellRatio);
     const tpSell = roundPricePrecision(

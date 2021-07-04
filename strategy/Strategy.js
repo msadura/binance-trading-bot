@@ -4,6 +4,7 @@ const { loadCandlesForSymbols } = require('../ohlc/loadCandles');
 const { addOhlcPair, setOhlcData } = require('../ohlc/ohlcCache');
 const watchCandlesticks = require('../ohlc/watchCandlesticks');
 const watchAccountUpdates = require('../trades/watchAccountUpdates');
+const { openPositionsReport } = require('../trades/report');
 
 const DEFAULT_STRATEGY_CONFIG = {
   riskRewardRatio: 1,
@@ -18,7 +19,8 @@ const DEFAULT_STRATEGY_CONFIG = {
   maxIdleMinutes: 60 * 24,
   idleCheckMinutes: 60,
   usePriceUpdate: false,
-  traceMarketStatus: true
+  traceMarketStatus: true,
+  logOpenPositionsReport: true
 };
 
 class Strategy {
@@ -71,6 +73,8 @@ class Strategy {
         this.config.idleCheckMinutes || DEFAULT_STRATEGY_CONFIG.idleCheckMinutes
       );
     }
+
+    this.reportOpenPositions();
   }
 
   async prepareHistoricalOhlcData() {
@@ -195,6 +199,14 @@ class Strategy {
 
       return { ...trade, ...updatedPrices };
     }
+  }
+
+  reportOpenPositions() {
+    if (!this.config?.logOpenPositionsReport) {
+      return;
+    }
+
+    setInterval(() => openPositionsReport(this.trade.openTrades), 1000 * 60 * 30);
   }
 
   // eslint-disable-next-line no-unused-vars
