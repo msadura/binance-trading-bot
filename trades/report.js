@@ -70,10 +70,14 @@ async function openPositionsReport(openPositions = {}) {
   let totalPnl = 0;
 
   for (const positionConfig of positionsArr) {
-    const price = await loadSymbolPrice(positionConfig.symbol);
-    const pnl = getPNL(positionConfig, price);
-    report[positionConfig.symbol] = pnl;
-    totalPnl = totalPnl + pnl;
+    if (positionConfig) {
+      const price = await loadSymbolPrice(positionConfig.symbol);
+      const pnl = getPNL(positionConfig, price);
+      report[positionConfig.symbol] = pnl;
+      if (pnl) {
+        totalPnl = totalPnl + pnl;
+      }
+    }
   }
 
   console.log(`🔥 Open pos. ${positionsArr.length} pnl: ${totalPnl}$`);
