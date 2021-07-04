@@ -2,6 +2,7 @@ const SINGLE_TRADE_USD_AMOUNT = Number(process.env.SINGLE_TRADE_USD_AMOUNT) || 5
 const MAX_OPEN_TRADES = Number(process.env.MAX_OPEN_TRADES) || null;
 const VIRTUAL_TRADES = !!Number(process.env.VIRTUAL_TRADES) || false;
 const CANDLE_PERIOD = process.env.CANDLE_PERIOD || '1h';
+const STRATEGY_NAME = process.env.STRATEGY_NAME || '';
 const BLOCKED_TRADE_COINS = [
   'BNBUSDT',
   'EURUSDT',
@@ -25,5 +26,6 @@ module.exports = {
   MANUAL_WATCH_PAIRS,
   MAX_OPEN_TRADES,
   VIRTUAL_TRADES,
-  CANDLE_PERIOD
+  CANDLE_PERIOD,
+  STRATEGY_NAME
 };

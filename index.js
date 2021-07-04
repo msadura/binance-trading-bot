@@ -1,8 +1,8 @@
 require('dotenv').config();
 const binance = require('./binanceApi');
 const { loadBalances } = require('./balances');
-const { loadSymbolPrice } = require('./prices');
 const { loadExchangeInfo } = require('./exchangeInfo');
+const { STRATEGY_NAME } = require('./constants');
 
 // refactor strategies
 // const watchFractals50Strategy = require('./watchFractals50Strategy');
@@ -13,14 +13,18 @@ const { loadExchangeInfo } = require('./exchangeInfo');
 const EmaStochRsiAtrStrategy = require('./strategy/EmaStochRsiAtrStrategy');
 const EmaCross1030 = require('./strategy/EmaCross1030');
 
-const strategies = {
-  emaStochRSI: EmaStochRsiAtrStrategy,
-  emaCross1030: EmaCross1030
+const STRATEGIES = {
+  EMA_STOCH_RSI: EmaStochRsiAtrStrategy,
+  EMA_CROSS_10_30: EmaCross1030
 };
 
 runApp();
 
 async function runApp() {
+  if (!STRATEGIES[STRATEGY_NAME]) {
+    throw `Incorrect STRATEGY_NAME env variable. Aborting.`;
+  }
+
   // ---- bootstrap phase ----
   await binance.useServerTime();
   await loadExchangeInfo();
@@ -40,12 +44,13 @@ async function runApp() {
   // liquidateStopLoss('SRMBUSD');
   // console.log('🔥', roundPricePrecision('MATICUSDT', '8.12349080809098'));
   // watchAccountUpdates();
-  loadSymbolPrice('BNBUSDT');
 
   // ---- use selected trade strategy ----
   // watchFractalsStrategy();
   // watchEngulfingStrategy();
   // watchEmaStochRsiAtrStrategy();
-  const Strategy = new strategies.emaCross1030();
+
+  console.log(`Use strategy: ${STRATEGY_NAME}`);
+  const Strategy = new STRATEGIES[STRATEGY_NAME]();
   Strategy.run();
 }

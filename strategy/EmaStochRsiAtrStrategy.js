@@ -20,7 +20,8 @@ class EmaStochRsiAtrStrategy extends Strategy {
     maxIdleMinutes: 60 * 24,
     idleCheckMinutes: 60,
     usePriceUpdate: false,
-    traceMarketStatus: true
+    traceMarketStatus: true,
+    logOpenPositionsReport: true
   };
 
   addIndicators(ohlcArray, { symbol, checkAll } = {}) {
