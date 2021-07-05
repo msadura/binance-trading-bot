@@ -12,10 +12,12 @@ const { STRATEGY_NAME } = require('./constants');
 // refactored
 const EmaStochRsiAtrStrategy = require('./strategy/EmaStochRsiAtrStrategy');
 const EmaCross1030 = require('./strategy/EmaCross1030');
+const MacdCrossSimple = require('./strategy/MacdCrossSimple');
 
 const STRATEGIES = {
   EMA_STOCH_RSI: EmaStochRsiAtrStrategy,
-  EMA_CROSS_10_30: EmaCross1030
+  EMA_CROSS_10_30: EmaCross1030,
+  MACD_CROSS_SIMPLE: MacdCrossSimple
 };
 
 runApp();
