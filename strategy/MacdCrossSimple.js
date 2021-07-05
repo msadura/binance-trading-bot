@@ -35,7 +35,7 @@ class MacdCrossSimple extends Strategy {
     const prevCandle = ohlc[ohlc.length - 2];
     const { ema } = candle;
 
-    if (!ema[200] || candle.close < ema[200]) {
+    if (!ema?.[200] || candle.close < ema[200]) {
       return false;
     }
 
@@ -64,7 +64,7 @@ class MacdCrossSimple extends Strategy {
     const prevCandle = ohlc[ohlc.length - 2];
     const { ema } = candle;
 
-    if (!ema[200] || candle.close > ema[200]) {
+    if (!ema?.[200] || candle.close > ema[200]) {
       return false;
     }
 
